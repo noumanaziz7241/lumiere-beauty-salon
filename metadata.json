@@ -1,0 +1,6 @@
+{
+  "name": "KOMSL Beauty Salon",
+  "description": "An elegant, highly polished web presence for KOMSL Beauty Salon in Iqbal Town, Lahore. A premium, hygienic Ladies Only sanctuary.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
