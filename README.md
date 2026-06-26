@@ -1,10 +1,10 @@
 <div align="center">
   <img src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" alt="Beauty Salon Banner" width="100%"/>
 
-  # ✨ Komsl Beauty Salon ✨
+  # ✨ Lumière Beauty Salon ✨
   **A Premium, State-of-the-Art Salon Booking Experience**
 
-  [![GitHub Stars](https://img.shields.io/github/stars/nouman-aziz/komsl-beauty-salon?style=for-the-badge&color=amber)](https://github.com/nouman-aziz/komsl-beauty-salon)
+  [![GitHub Stars](https://img.shields.io/github/stars/noumanaziz7241/lumiere-beauty-salon?style=for-the-badge&color=amber)](https://github.com/noumanaziz7241/lumiere-beauty-salon)
   [![Vite](https://img.shields.io/badge/Vite-6.23-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
   [![React](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.1-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
@@ -14,7 +14,7 @@
 
 ## 🌟 Overview
 
-Welcome to **Komsl Beauty Salon**, a high-end web application designed to provide a seamless and premium booking experience for beauty enthusiasts. Built with modern web technologies, it features a sleek dark mode interface, vibrant aesthetics, and fluid micro-animations that reflect the luxury of the salon itself.
+Welcome to **Lumière Beauty Salon**, a high-end web application designed to provide a seamless and premium booking experience for beauty enthusiasts. Built with modern web technologies, it features a sleek dark mode interface, vibrant aesthetics, and fluid micro-animations that reflect the luxury of the salon itself.
 
 ## 🚀 Key Features
 
@@ -51,8 +51,8 @@ Check your version:
 node -v
 ```
 ```bash
-git clone https://github.com/nouman-aziz/komsl-beauty-salon.git
-cd komsl-beauty-salon
+git clone https://github.com/noumanaziz7241/lumiere-beauty-salon.git
+cd lumiere-beauty-salon
 ```
 
 ### 3. Install Dependencies

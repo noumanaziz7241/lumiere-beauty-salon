@@ -113,7 +113,7 @@ export default function App() {
 
       </main>
 
-      {/* Contact mapping & Slogans Footer segment */}
+      {/* Footer & slogans segment */}
       <ContactFooter onBackToTop={() => handleSectionClick('hero')} />
 
     </div>
