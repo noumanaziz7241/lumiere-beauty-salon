@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Heart, Sparkles, Navigation } from 'lucide-react';
+import { Heart, Sparkles } from 'lucide-react';
 import heroBg from '../assets/images/salon_hero_bg_1780153729412.png';
 
 interface HeroProps {
@@ -17,7 +17,7 @@ export default function Hero({ onLearnMoreClick, onBookClick }: HeroProps) {
       <div className="absolute inset-0 z-0">
         <img
           src={heroBg}
-          alt="KOMSL Luxurious Salon Interior"
+          alt="Luxurious salon interior"
           className="w-full h-full object-cover scale-100"
           referrerPolicy="no-referrer"
         />
@@ -43,7 +43,7 @@ export default function Hero({ onLearnMoreClick, onBookClick }: HeroProps) {
         <div className="space-y-1 mb-5">
           <span className="text-pink-600 font-serif italic text-base sm:text-lg block tracking-wide">Redefining Elegance</span>
           <h1 className="font-serif text-5xl sm:text-7xl lg:text-8xl font-black tracking-widest text-[#501d2c] drop-shadow-sm select-none uppercase">
-            KOMSL
+            Lumière
           </h1>
           <div className="flex items-center justify-center gap-3">
             <div className="h-[1px] w-10 sm:w-16 bg-pink-900/30" />
@@ -73,10 +73,9 @@ export default function Hero({ onLearnMoreClick, onBookClick }: HeroProps) {
               Your Beauty, Our Passion
               <Heart className="w-3.5 h-3.5 fill-pink-500 stroke-pink-500 animate-pulse" />
             </p>
-            <div className="pt-3 text-pink-900/80 text-xs sm:text-sm font-semibold border-t border-white/50 flex justify-center items-center gap-2">
-              <Navigation className="w-4 h-4 text-pink-600" />
-              <span>365 Rachna Block, Iqbal Town, Lahore</span>
-            </div>
+            <p className="pt-3 text-pink-900/80 text-xs sm:text-sm font-semibold border-t border-white/50">
+              Premium treatments in a private, ladies-only setting
+            </p>
           </div>
         </div>
 

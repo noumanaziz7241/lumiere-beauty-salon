@@ -287,7 +287,7 @@ export default function ServiceCatalog({
                 <div>
                   <h5 className="font-serif text-pink-900 text-sm font-extrabold">Waxing Services Policy Message</h5>
                   <p className="font-sans text-xs text-pink-955/70 mt-1 leading-relaxed">
-                    At KOMSL Beauty Salon, we offer high-grade, hygienic strip and face waxing designed for sensitive and delicate female skin. Please note that **we strictly do not provide Bikini Wax or Chocolate Wax** services. Safe alternative wax treatments are available above.
+                    We offer high-grade, hygienic strip and face waxing designed for sensitive and delicate female skin. Please note that **we strictly do not provide Bikini Wax or Chocolate Wax** services. Safe alternative wax treatments are available above.
                   </p>
                 </div>
               </div>

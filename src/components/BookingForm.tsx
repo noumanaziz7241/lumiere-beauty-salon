@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, User, Phone, Mail, FileText, CheckCircle, Ticket, Trash2, Scissors, MapPin } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, FileText, Ticket, Trash2, Scissors } from 'lucide-react';
 import { Service, AppointmentBooking } from '../types';
 
 interface BookingFormProps {
@@ -57,7 +57,7 @@ export default function BookingForm({
 
     // Simulate reliable API/Server delay
     setTimeout(() => {
-      const referenceId = 'KM-' + Math.floor(100000 + Math.random() * 900000);
+      const referenceId = 'LM-' + Math.floor(100000 + Math.random() * 900000);
       const newBooking: AppointmentBooking = {
         id: referenceId,
         customerName,
@@ -100,7 +100,7 @@ export default function BookingForm({
               Confirmed
             </div>
             <Ticket className="w-10 h-10 text-pink-200 mx-auto mb-2 animate-bounce" />
-            <h3 className="font-serif text-2xl font-black text-white leading-tight uppercase">KOMSL Appointment</h3>
+            <h3 className="font-serif text-2xl font-black text-white leading-tight uppercase">Lumière Appointment</h3>
             <p className="font-sans text-[11px] text-pink-200 uppercase tracking-widest mt-1">Ladies Only Premium Privilege</p>
           </div>
 
@@ -159,18 +159,11 @@ export default function BookingForm({
               <span className="font-sans text-xl font-extrabold text-pink-900">{formatPKR(confirmedBooking.totalPrice)}</span>
             </div>
 
-            {/* Venue Address info */}
-            <div className="bg-pink-50 border border-[#501d2c]/10 p-4 rounded-2xl flex items-start gap-2.5">
-              <MapPin className="w-5 h-5 text-pink-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold text-pink-900 uppercase tracking-wide">KOMSL Salon Venue</p>
-                <p className="text-[11px] text-pink-955/75 mt-1 font-sans font-medium">
-                  365 Rachna Block, Iqbal Town, Lahore, Pakistan
-                </p>
-                <p className="text-[10px] text-pink-600 font-sans italic mt-1.5 font-semibold">
-                  *Please arrive 10 minutes prior to your time block. Ladies Only venue.
-                </p>
-              </div>
+            {/* Arrival reminder */}
+            <div className="bg-pink-50 border border-[#501d2c]/10 p-4 rounded-2xl">
+              <p className="text-[11px] text-pink-955/75 font-sans font-medium">
+                Please arrive 10 minutes prior to your scheduled time block. Ladies Only venue.
+              </p>
             </div>
 
             {/* Barcode representation */}
@@ -186,7 +179,7 @@ export default function BookingForm({
                   ))}
                 </div>
               </div>
-              <span className="text-[8px] font-mono uppercase tracking-widest text-pink-900/40 font-bold">KOMSL ONLINE SYSTEM RECEIPT</span>
+              <span className="text-[8px] font-mono uppercase tracking-widest text-pink-900/40 font-bold">LUMIÈRE ONLINE SYSTEM RECEIPT</span>
             </div>
 
             {/* reset button */}
@@ -331,7 +324,7 @@ export default function BookingForm({
                     type="tel"
                     id="phone"
                     required
-                    placeholder="e.g. 0321 469 6272"
+                    placeholder="e.g. 0300 1234567"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     className="w-full bg-white/70 text-pink-900 placeholder-pink-200 py-3.5 px-4 rounded-xl border border-pink-100 focus:border-pink-500 outline-none font-sans text-sm transition-all focus:ring-0 shadow-sm"

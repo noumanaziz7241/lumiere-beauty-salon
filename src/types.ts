@@ -2,7 +2,7 @@ export interface Service {
   id: string;
   name: string;
   estimatedDuration: string;
-  pricePKR: number; // In Pakistani Rupees (PKR) since the salon is in Lahore, Pakistan.
+  pricePKR: number;
   description?: string;
 }
 
