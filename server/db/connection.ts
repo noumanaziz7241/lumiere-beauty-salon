@@ -9,6 +9,12 @@ export const SCHEMA_VERSION = '1.0.0';
 let pool: pg.Pool | null = null;
 let initPromise: Promise<void> | null = null;
 
+function shouldUseDatabaseSsl(connectionString: string): boolean {
+  if (process.env.DATABASE_SSL === 'true') return true;
+  if (process.env.DATABASE_SSL === 'false') return false;
+  return /railway\.app|neon\.tech|supabase\.co|render\.com|sslmode=require/i.test(connectionString);
+}
+
 export function getPool(): pg.Pool {
   if (!pool) {
     const connectionString = process.env.DATABASE_URL;
@@ -17,7 +23,7 @@ export function getPool(): pg.Pool {
     }
     pool = new pg.Pool({
       connectionString,
-      ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+      ssl: shouldUseDatabaseSsl(connectionString) ? { rejectUnauthorized: false } : undefined,
     });
   }
   return pool;

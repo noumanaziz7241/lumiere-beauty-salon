@@ -22,21 +22,23 @@ One URL, no CORS issues, admin cookies work out of the box.
 
 1. Push this repo to GitHub.
 2. [Railway](https://railway.app) → **New Project** → **Deploy from GitHub** → select the repo.
-3. Add **PostgreSQL** plugin to the project; Railway sets `DATABASE_URL` automatically.
-4. In the web service **Variables**, set:
+3. Add **PostgreSQL** to the project (separate service).
+4. On the **web service** → **Variables** → **Add variable reference** → link `DATABASE_URL` from the Postgres service.
+5. Set these variables on the web service:
 
    | Variable | Value |
    |----------|-------|
    | `NODE_ENV` | `production` |
-   | `DATABASE_SSL` | `true` |
-   | `CORS_ORIGIN` | `https://YOUR-RAILWAY-URL.up.railway.app` (update after first deploy) |
    | `ADMIN_PASSWORD` | strong secret (not `lumiere2024`) |
    | `SESSION_SECRET` | long random string |
+   | `CORS_ORIGIN` | `https://YOUR-RAILWAY-URL.up.railway.app` (update after first deploy) |
    | `APP_URL` | same as `CORS_ORIGIN` |
 
-5. Deploy. Railway uses `railway.toml`: `npm run build` then `npm start`.
-6. Open `https://YOUR-URL.up.railway.app/api/health` — should return `{"status":"ok",...}`.
-7. Visit the root URL — public site and `/admin` should work.
+   `DATABASE_SSL` is optional — SSL is auto-enabled for Railway/Neon/Supabase URLs.
+
+6. Redeploy after linking Postgres and setting variables.
+7. Check **Deploy logs** — you should see `Lumière server listening` then `Database connected`.
+8. Open `https://YOUR-URL.up.railway.app/api/health` — should return `{"status":"ok","database":"connected",...}`.
 
 ### Custom domain (change public URL)
 
@@ -97,7 +99,16 @@ After renaming or adding a domain, update Railway `CORS_ORIGIN` and `APP_URL` to
 
 ---
 
-## Local development
+## Troubleshooting Railway healthcheck
+
+| Symptom | Fix |
+|---------|-----|
+| Healthcheck fails immediately | Ensure `DATABASE_URL` is **referenced** from the Postgres service on the web service |
+| `DATABASE_URL environment variable is required` in logs | Link Postgres → web service variables (step 4 above) |
+| `tsx: not found` in logs | Pull latest code (`tsx` is a production dependency) |
+| DB SSL errors | Set `DATABASE_SSL=true` or use latest code (auto-detects Railway URLs) |
+
+---
 
 ```bash
 npm install
