@@ -99,6 +99,35 @@ After renaming or adding a domain, update Railway `CORS_ORIGIN` and `APP_URL` to
 
 ---
 
+## Admin password not working
+
+The password is stored in PostgreSQL (`admin_users`), not read from `ADMIN_PASSWORD` on every login.
+
+| Situation | Fix |
+|-----------|-----|
+| No row in `admin_users` (DELETE returned 0 rows) | Push latest code and **redeploy** — startup now creates the admin user automatically |
+| Wrong password, `ADMIN_PASSWORD` ignored | On Railway Variables add `ADMIN_PASSWORD_RESET=true` (with your `ADMIN_PASSWORD`), redeploy, log in, then **remove** `ADMIN_PASSWORD_RESET` |
+| Never set password before first deploy | Try default `lumiere2024`, or use reset flow above |
+
+Verify admin exists in Postgres:
+
+```sql
+SELECT id, created_at FROM admin_users;
+```
+
+---
+
+## Vercel still shows old / broken site
+
+Your live app is on **Railway**: `https://lumiere-beauty-salon-production.up.railway.app`
+
+Vercel only hosts static files unless `VITE_API_URL` points to Railway. Options:
+
+1. **Use Railway only** — share the Railway URL; delete or ignore the Vercel project.
+2. **Fix Vercel** — Vercel → Project → **Environment Variables** → `VITE_API_URL` = `https://lumiere-beauty-salon-production.up.railway.app` → **Redeploy**. On Railway set `CORS_ORIGIN` and `APP_URL` to your Vercel URL and `COOKIE_SAME_SITE=none`.
+
+---
+
 ## Troubleshooting Railway healthcheck
 
 | Symptom | Fix |

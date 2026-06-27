@@ -23,6 +23,7 @@ import {
   verifyAdminPassword,
   updateAdminPassword,
   seedAdminPassword,
+  ensureAdminUser,
   importAdminHashFromJson,
 } from '../db/repositories/adminRepository.ts';
 import {
@@ -86,6 +87,9 @@ export async function initStore() {
           await seedAdminPassword();
         }
       }
+
+      // DB may be seeded without admin_users (e.g. partial deploy) — always ensure admin exists
+      await ensureAdminUser();
     })();
   }
   await storeInitPromise;

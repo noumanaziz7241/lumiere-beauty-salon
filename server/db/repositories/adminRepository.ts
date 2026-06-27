@@ -31,6 +31,26 @@ export async function seedAdminPassword() {
   ]);
 }
 
+/** Create missing admin row or apply ADMIN_PASSWORD when ADMIN_PASSWORD_RESET=true. */
+export async function ensureAdminUser() {
+  const existing = await queryOne<{ id: number }>('SELECT id FROM admin_users WHERE id = 1');
+  const envPassword = process.env.ADMIN_PASSWORD?.trim();
+
+  if (!existing) {
+    const password = envPassword || DEFAULT_SALON_CONFIG.adminPassword;
+    await query('INSERT INTO admin_users (id, password_hash) VALUES (1, $1)', [
+      hashPassword(password),
+    ]);
+    console.log('Admin user created from environment/default password');
+    return;
+  }
+
+  if (process.env.ADMIN_PASSWORD_RESET === 'true' && envPassword) {
+    await updateAdminPassword(envPassword);
+    console.log('Admin password updated from ADMIN_PASSWORD (ADMIN_PASSWORD_RESET=true)');
+  }
+}
+
 export async function importAdminHashFromJson(passwordHash: string) {
   const existing = await queryOne<{ id: number }>('SELECT id FROM admin_users WHERE id = 1');
   if (existing) return;
