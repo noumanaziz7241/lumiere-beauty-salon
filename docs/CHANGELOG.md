@@ -2,6 +2,12 @@
 
 ## 2026-06-27
 
+### Production deploy — Railway healthcheck fix
+- Moved `tsx` to production dependencies (fixes `npm start` on Railway)
+- Server listens on `0.0.0.0` before DB init so `/api/health` responds during startup
+- Auto-enable PostgreSQL SSL for Railway/Neon/Supabase URLs
+- Docs updated: DEPLOYMENT.md, CHANGELOG.md
+
 ### Production deploy — Vercel fix & Railway support
 - Added `VITE_API_URL` for split deploy (Vercel frontend + Railway/Render API)
 - Production connection error no longer shows local `npm run db:up` hints
