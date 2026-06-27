@@ -1,0 +1,528 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Sparkles, LogOut, Settings, Phone, FileText, Scissors,
+  Star, Clock, Save, RotateCcw, Plus, Trash2, Home,
+} from 'lucide-react';
+import { useSalonConfig } from '../context/SalonConfigContext';
+import { SalonConfig, Testimonial, CorePromise, BusinessHours } from '../config/defaults';
+import { ServiceCategory, Service } from '../types';
+
+type Tab = 'contact' | 'content' | 'services' | 'testimonials' | 'hours' | 'settings';
+
+export default function AdminDashboard() {
+  const { config, updateConfig, resetConfig, isAdmin, logout } = useSalonConfig();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<Tab>('contact');
+  const [draft, setDraft] = useState<SalonConfig>(config);
+  const [saved, setSaved] = useState(false);
+
+  React.useEffect(() => {
+    if (!isAdmin) navigate('/admin');
+  }, [isAdmin, navigate]);
+
+  React.useEffect(() => {
+    setDraft(config);
+  }, [config]);
+
+  const handleSave = () => {
+    updateConfig(draft);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin');
+  };
+
+  const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
+    { id: 'contact', label: 'Contact', icon: Phone },
+    { id: 'content', label: 'Content', icon: FileText },
+    { id: 'services', label: 'Services', icon: Scissors },
+    { id: 'testimonials', label: 'Reviews', icon: Star },
+    { id: 'hours', label: 'Hours', icon: Clock },
+    { id: 'settings', label: 'Settings', icon: Settings },
+  ];
+
+  const inputClass =
+    'w-full px-3 py-2.5 rounded-xl border border-rose-pale bg-white font-sans text-sm text-burgundy focus:outline-none focus:ring-2 focus:ring-rose/30 focus:border-rose';
+  const labelClass = 'block font-sans text-[11px] font-bold text-burgundy/70 uppercase tracking-wider mb-1.5';
+  const textareaClass = inputClass + ' resize-y min-h-[80px]';
+
+  return (
+    <div className="min-h-screen bg-cream">
+      {/* Header */}
+      <header className="bg-burgundy text-white sticky top-0 z-50 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-rose to-gold flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="font-serif text-lg font-black">Lumière Admin</h1>
+              <p className="text-[10px] text-rose-pale/70 uppercase tracking-widest">Content Manager</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <a href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-pale hover:bg-white/10 transition-colors">
+              <Home className="w-3.5 h-3.5" /> View Site
+            </a>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-rose hover:bg-rose-light text-white transition-all cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {saved ? 'Saved!' : 'Save All'}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-rose-pale/80 hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar tabs */}
+          <nav className="lg:w-56 shrink-0">
+            <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-sans text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      activeTab === tab.id
+                        ? 'bg-burgundy text-white shadow-md'
+                        : 'text-burgundy/70 hover:bg-rose-pale/50'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+
+          {/* Panel content */}
+          <div className="flex-1 bg-white rounded-2xl border border-rose-pale/50 shadow-sm p-6 sm:p-8">
+            {activeTab === 'contact' && (
+              <ContactPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} />
+            )}
+            {activeTab === 'content' && (
+              <ContentPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} textareaClass={textareaClass} />
+            )}
+            {activeTab === 'services' && (
+              <ServicesPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} />
+            )}
+            {activeTab === 'testimonials' && (
+              <TestimonialsPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} textareaClass={textareaClass} />
+            )}
+            {activeTab === 'hours' && (
+              <HoursPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} />
+            )}
+            {activeTab === 'settings' && (
+              <SettingsPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} resetConfig={resetConfig} />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Sub-panels ---- */
+
+function ContactPanel({ draft, setDraft, inputClass, labelClass }: PanelProps) {
+  return (
+    <div className="space-y-6">
+      <h2 className="font-serif text-xl font-black text-burgundy">Contact Information</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {([
+          ['phone', 'Phone Number'],
+          ['whatsapp', 'WhatsApp Number (digits only, e.g. 923001234567)'],
+          ['email', 'Email Address'],
+          ['address', 'Street Address'],
+          ['city', 'City / Region'],
+        ] as const).map(([key, label]) => (
+          <div key={key}>
+            <label className={labelClass}>{label}</label>
+            <input
+              className={inputClass}
+              value={draft.contact[key]}
+              onChange={(e) =>
+                setDraft({ ...draft, contact: { ...draft.contact, [key]: e.target.value } })
+              }
+            />
+          </div>
+        ))}
+        <div className="sm:col-span-2">
+          <label className={labelClass}>Google Maps Embed URL</label>
+          <input
+            className={inputClass}
+            value={draft.contact.mapEmbedUrl}
+            onChange={(e) =>
+              setDraft({ ...draft, contact: { ...draft.contact, mapEmbedUrl: e.target.value } })
+            }
+          />
+        </div>
+      </div>
+
+      <h3 className="font-serif text-lg font-bold text-burgundy pt-4 border-t border-rose-pale">Social Media</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {(['instagram', 'facebook', 'tiktok'] as const).map((key) => (
+          <div key={key}>
+            <label className={labelClass}>{key.charAt(0).toUpperCase() + key.slice(1)} URL</label>
+            <input
+              className={inputClass}
+              value={draft.social[key]}
+              onChange={(e) =>
+                setDraft({ ...draft, social: { ...draft.social, [key]: e.target.value } })
+              }
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ContentPanel({ draft, setDraft, inputClass, labelClass, textareaClass }: PanelProps & { textareaClass: string }) {
+  const updateHero = (key: string, value: string) =>
+    setDraft({ ...draft, hero: { ...draft.hero, [key]: value } });
+  const updateAbout = (key: string, value: string | string[]) =>
+    setDraft({ ...draft, about: { ...draft.about, [key]: value } });
+  const updateFooter = (key: string, value: string) =>
+    setDraft({ ...draft, footer: { ...draft.footer, [key]: value } });
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="font-serif text-xl font-black text-burgundy mb-4">Hero Section</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {([
+            ['tagline', 'Tagline'],
+            ['subtitle', 'Subtitle'],
+            ['motto', 'Motto'],
+            ['bannerText', 'Banner Text'],
+            ['cardTitle', 'Card Title'],
+            ['cardSubtitle', 'Card Subtitle'],
+            ['cardDescription', 'Card Description'],
+          ] as const).map(([key, label]) => (
+            <div key={key}>
+              <label className={labelClass}>{label}</label>
+              <input className={inputClass} value={draft.hero[key]} onChange={(e) => updateHero(key, e.target.value)} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-serif text-xl font-black text-burgundy mb-4">About Section</h2>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Title</label>
+              <input className={inputClass} value={draft.about.title} onChange={(e) => updateAbout('title', e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>Subtitle</label>
+              <input className={inputClass} value={draft.about.subtitle} onChange={(e) => updateAbout('subtitle', e.target.value)} />
+            </div>
+          </div>
+          {draft.about.paragraphs.map((p, i) => (
+            <div key={i}>
+              <label className={labelClass}>Paragraph {i + 1}</label>
+              <textarea
+                className={textareaClass}
+                value={p}
+                onChange={(e) => {
+                  const paragraphs = [...draft.about.paragraphs];
+                  paragraphs[i] = e.target.value;
+                  updateAbout('paragraphs', paragraphs);
+                }}
+              />
+            </div>
+          ))}
+          {draft.about.highlights.map((h, i) => (
+            <div key={i}>
+              <label className={labelClass}>Highlight {i + 1}</label>
+              <input
+                className={inputClass}
+                value={h}
+                onChange={(e) => {
+                  const highlights = [...draft.about.highlights];
+                  highlights[i] = e.target.value;
+                  updateAbout('highlights', highlights);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-serif text-xl font-black text-burgundy mb-4">Footer & Navbar</h2>
+        <div className="space-y-4">
+          <div>
+            <label className={labelClass}>Navbar Banner</label>
+            <input className={inputClass} value={draft.navbar.bannerText} onChange={(e) => setDraft({ ...draft, navbar: { bannerText: e.target.value } })} />
+          </div>
+          <div>
+            <label className={labelClass}>Footer Description</label>
+            <textarea className={textareaClass} value={draft.footer.description} onChange={(e) => updateFooter('description', e.target.value)} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Slogan</label>
+              <input className={inputClass} value={draft.footer.slogan} onChange={(e) => updateFooter('slogan', e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>Tagline</label>
+              <input className={inputClass} value={draft.footer.tagline} onChange={(e) => updateFooter('tagline', e.target.value)} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-serif text-xl font-black text-burgundy mb-4">Core Promises</h2>
+        {draft.corePromises.map((promise, i) => (
+          <div key={i} className="mb-4 p-4 rounded-xl border border-rose-pale/50 bg-cream/30">
+            <label className={labelClass}>Title</label>
+            <input
+              className={inputClass + ' mb-2'}
+              value={promise.title}
+              onChange={(e) => {
+                const corePromises = [...draft.corePromises];
+                corePromises[i] = { ...corePromises[i], title: e.target.value };
+                setDraft({ ...draft, corePromises });
+              }}
+            />
+            <label className={labelClass}>Description</label>
+            <textarea
+              className={textareaClass}
+              value={promise.description}
+              onChange={(e) => {
+                const corePromises = [...draft.corePromises];
+                corePromises[i] = { ...corePromises[i], description: e.target.value };
+                setDraft({ ...draft, corePromises });
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ServicesPanel({ draft, setDraft, inputClass, labelClass }: PanelProps) {
+  const updateService = (catIdx: number, svcIdx: number, field: keyof Service, value: string | number) => {
+    const services = JSON.parse(JSON.stringify(draft.services)) as ServiceCategory[];
+    const svc = services[catIdx].services[svcIdx];
+    if (field === 'pricePKR') svc.pricePKR = value as number;
+    else if (field === 'name') svc.name = value as string;
+    else if (field === 'estimatedDuration') svc.estimatedDuration = value as string;
+    else if (field === 'description') svc.description = value as string;
+    setDraft({ ...draft, services });
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="font-serif text-xl font-black text-burgundy">Service Catalog</h2>
+      <p className="font-sans text-xs text-burgundy/60">Edit prices, names, and descriptions. Changes appear on the public site after saving.</p>
+      {draft.services.map((cat, catIdx) => (
+        <div key={cat.id} className="border border-rose-pale/50 rounded-xl overflow-hidden">
+          <div className="bg-burgundy/5 px-4 py-3 border-b border-rose-pale/50">
+            <h3 className="font-serif text-sm font-bold text-burgundy">{cat.name}</h3>
+            <p className="font-sans text-[10px] text-burgundy/50">{cat.services.length} services</p>
+          </div>
+          <div className="divide-y divide-rose-pale/30">
+            {cat.services.map((svc, svcIdx) => (
+              <div key={svc.id} className="p-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className={labelClass}>Name</label>
+                  <input className={inputClass} value={svc.name} onChange={(e) => updateService(catIdx, svcIdx, 'name', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Price (PKR)</label>
+                  <input className={inputClass} type="number" value={svc.pricePKR} onChange={(e) => updateService(catIdx, svcIdx, 'pricePKR', Number(e.target.value))} />
+                </div>
+                <div>
+                  <label className={labelClass}>Duration</label>
+                  <input className={inputClass} value={svc.estimatedDuration} onChange={(e) => updateService(catIdx, svcIdx, 'estimatedDuration', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Description</label>
+                  <input className={inputClass} value={svc.description || ''} onChange={(e) => updateService(catIdx, svcIdx, 'description', e.target.value)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TestimonialsPanel({ draft, setDraft, inputClass, labelClass, textareaClass }: PanelProps & { textareaClass: string }) {
+  const addTestimonial = () => {
+    const newT: Testimonial = { id: `t${Date.now()}`, name: '', text: '', rating: 5, service: '' };
+    setDraft({ ...draft, testimonials: [...draft.testimonials, newT] });
+  };
+
+  const removeTestimonial = (id: string) => {
+    setDraft({ ...draft, testimonials: draft.testimonials.filter((t) => t.id !== id) });
+  };
+
+  const updateTestimonial = (id: string, field: keyof Testimonial, value: string | number) => {
+    setDraft({
+      ...draft,
+      testimonials: draft.testimonials.map((t) => (t.id === id ? { ...t, [field]: value } : t)),
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-xl font-black text-burgundy">Testimonials</h2>
+        <button onClick={addTestimonial} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-rose text-white hover:bg-rose-light transition-colors cursor-pointer">
+          <Plus className="w-3.5 h-3.5" /> Add Review
+        </button>
+      </div>
+      {draft.testimonials.map((t) => (
+        <div key={t.id} className="p-4 rounded-xl border border-rose-pale/50 bg-cream/30 space-y-3">
+          <div className="flex justify-between items-start">
+            <span className="font-sans text-[10px] font-bold text-burgundy/40 uppercase">Review</span>
+            <button onClick={() => removeTestimonial(t.id)} className="text-red-400 hover:text-red-600 cursor-pointer">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className={labelClass}>Name</label>
+              <input className={inputClass} value={t.name} onChange={(e) => updateTestimonial(t.id, 'name', e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>Service</label>
+              <input className={inputClass} value={t.service || ''} onChange={(e) => updateTestimonial(t.id, 'service', e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>Rating (1-5)</label>
+              <input className={inputClass} type="number" min={1} max={5} value={t.rating} onChange={(e) => updateTestimonial(t.id, 'rating', Number(e.target.value))} />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Review Text</label>
+            <textarea className={textareaClass} value={t.text} onChange={(e) => updateTestimonial(t.id, 'text', e.target.value)} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HoursPanel({ draft, setDraft, inputClass, labelClass }: PanelProps) {
+  const updateHour = (idx: number, field: keyof BusinessHours, value: string | boolean) => {
+    const businessHours = [...draft.businessHours];
+    businessHours[idx] = { ...businessHours[idx], [field]: value };
+    setDraft({ ...draft, businessHours });
+  };
+
+  const addHour = () => {
+    setDraft({ ...draft, businessHours: [...draft.businessHours, { days: '', hours: '' }] });
+  };
+
+  const removeHour = (idx: number) => {
+    setDraft({ ...draft, businessHours: draft.businessHours.filter((_, i) => i !== idx) });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-xl font-black text-burgundy">Business Hours</h2>
+        <button onClick={addHour} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-rose text-white hover:bg-rose-light transition-colors cursor-pointer">
+          <Plus className="w-3.5 h-3.5" /> Add Row
+        </button>
+      </div>
+      {draft.businessHours.map((h, i) => (
+        <div key={i} className="flex items-end gap-3">
+          <div className="flex-1">
+            <label className={labelClass}>Days</label>
+            <input className={inputClass} value={h.days} onChange={(e) => updateHour(i, 'days', e.target.value)} />
+          </div>
+          <div className="flex-1">
+            <label className={labelClass}>Hours</label>
+            <input className={inputClass} value={h.hours} onChange={(e) => updateHour(i, 'hours', e.target.value)} />
+          </div>
+          <label className="flex items-center gap-1.5 pb-2.5 font-sans text-xs text-burgundy/60">
+            <input type="checkbox" checked={!!h.closed} onChange={(e) => updateHour(i, 'closed', e.target.checked)} />
+            Closed
+          </label>
+          <button onClick={() => removeHour(i)} className="pb-2.5 text-red-400 hover:text-red-600 cursor-pointer">
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      ))}
+      <div>
+        <label className={labelClass}>Hours Note (footer)</label>
+        <input className={inputClass} value={draft.hoursNote} onChange={(e) => setDraft({ ...draft, hoursNote: e.target.value })} />
+      </div>
+      <div>
+        <label className={labelClass}>Booking Time Slots (comma-separated)</label>
+        <input
+          className={inputClass}
+          value={draft.timeSlots.join(', ')}
+          onChange={(e) =>
+            setDraft({ ...draft, timeSlots: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })
+          }
+        />
+      </div>
+    </div>
+  );
+}
+
+function SettingsPanel({ draft, setDraft, inputClass, labelClass, resetConfig }: PanelProps & { resetConfig: () => void }) {
+  return (
+    <div className="space-y-6">
+      <h2 className="font-serif text-xl font-black text-burgundy">Admin Settings</h2>
+      <div>
+        <label className={labelClass}>Admin Password</label>
+        <input
+          className={inputClass}
+          type="password"
+          value={draft.adminPassword}
+          onChange={(e) => setDraft({ ...draft, adminPassword: e.target.value })}
+        />
+        <p className="font-sans text-[10px] text-burgundy/50 mt-1">This password is used to access the admin portal.</p>
+      </div>
+      <div className="pt-6 border-t border-rose-pale">
+        <h3 className="font-serif text-lg font-bold text-burgundy mb-2">Danger Zone</h3>
+        <p className="font-sans text-xs text-burgundy/60 mb-3">Reset all content back to factory defaults. This cannot be undone.</p>
+        <button
+          onClick={() => {
+            if (confirm('Reset all salon content to defaults? This cannot be undone.')) {
+              resetConfig();
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer"
+        >
+          <RotateCcw className="w-4 h-4" /> Reset to Defaults
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface PanelProps {
+  draft: SalonConfig;
+  setDraft: React.Dispatch<React.SetStateAction<SalonConfig>>;
+  inputClass: string;
+  labelClass: string;
+}

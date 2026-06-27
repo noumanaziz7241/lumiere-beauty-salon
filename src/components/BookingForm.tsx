@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, User, Phone, Mail, FileText, Ticket, Trash2, Scissors } from 'lucide-react';
 import { Service, AppointmentBooking } from '../types';
+import { useSalonConfig } from '../context/SalonConfigContext';
 
 interface BookingFormProps {
   selectedServices: Service[];
@@ -15,6 +16,9 @@ export default function BookingForm({
   onClearServices,
   onBookingSuccess,
 }: BookingFormProps) {
+  const { config } = useSalonConfig();
+  const timeSlots = config.timeSlots;
+
   // Booking Form State
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -24,12 +28,6 @@ export default function BookingForm({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<AppointmentBooking | null>(null);
-
-  // Time slots for booking
-  const timeSlots = [
-    '10:30 AM', '11:30 AM', '12:30 PM', '01:30 PM', '02:30 PM', 
-    '03:30 PM', '04:30 PM', '05:30 PM', '06:30 PM', '07:30 PM'
-  ];
 
   const totalAmount = selectedServices.reduce((sum, item) => sum + item.pricePKR, 0);
 
@@ -112,7 +110,7 @@ export default function BookingForm({
 
             <div className="text-center">
               <span className="text-xs font-sans text-pink-900/60 uppercase tracking-widest font-semibold">Appointment ID Reference</span>
-              <p className="font-sans text-2xl font-black text-pink-905 tracking-wider mt-0.5">{confirmedBooking.id}</p>
+              <p className="font-sans text-2xl font-black text-burgundy tracking-wider mt-0.5">{confirmedBooking.id}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 border-t border-b border-pink-100/50 py-4.5">
@@ -122,7 +120,7 @@ export default function BookingForm({
               </div>
               <div>
                 <span className="text-[10px] font-sans text-pink-900/50 uppercase tracking-widest block">Phone Number</span>
-                <span className="font-mono text-sm text-pink-955 font-semibold">{confirmedBooking.customerPhone}</span>
+                <span className="font-mono text-sm text-burgundy font-semibold">{confirmedBooking.customerPhone}</span>
               </div>
               <div className="mt-2">
                 <span className="text-[10px] font-sans text-pink-900/50 uppercase tracking-widest block">Reserved Date</span>
@@ -147,7 +145,7 @@ export default function BookingForm({
                 {confirmedBooking.selectedServices.map((srv) => (
                   <div key={srv.id} className="flex justify-between items-center text-xs bg-white/60 py-2 px-3 rounded-xl border border-pink-100">
                     <span className="font-serif font-black text-pink-900">{srv.name}</span>
-                    <span className="font-sans text-pink-850 font-bold">{formatPKR(srv.pricePKR)}</span>
+                    <span className="font-sans text-burgundy-light font-bold">{formatPKR(srv.pricePKR)}</span>
                   </div>
                 ))}
               </div>
@@ -161,7 +159,7 @@ export default function BookingForm({
 
             {/* Arrival reminder */}
             <div className="bg-pink-50 border border-[#501d2c]/10 p-4 rounded-2xl">
-              <p className="text-[11px] text-pink-955/75 font-sans font-medium">
+              <p className="text-[11px] text-burgundy/75 font-sans font-medium">
                 Please arrive 10 minutes prior to your scheduled time block. Ladies Only venue.
               </p>
             </div>
@@ -185,7 +183,7 @@ export default function BookingForm({
             {/* reset button */}
             <button
               onClick={handleReset}
-              className="w-full py-3.5 rounded-xl font-sans text-xs uppercase font-extrabold tracking-widest text-center bg-pink-900 hover:bg-pink-850 text-white shadow-sm transition-all cursor-pointer"
+              className="w-full py-3.5 rounded-xl font-sans text-xs uppercase font-extrabold tracking-widest text-center bg-pink-900 hover:bg-burgundy-light text-white shadow-sm transition-all cursor-pointer"
             >
               Book Another Session
             </button>
@@ -228,11 +226,11 @@ export default function BookingForm({
 
             {selectedServices.length === 0 ? (
               <div className="text-center py-10 space-y-3">
-                <div className="w-12 h-12 rounded-full border border-pink-150 flex items-center justify-center mx-auto text-pink-300">
+                <div className="w-12 h-12 rounded-full border border-rose-pale flex items-center justify-center mx-auto text-pink-300">
                   <Scissors className="w-5 h-5 animate-pulse" />
                 </div>
-                <p className="font-sans text-xs text-pink-955/60 leading-relaxed font-semibold">
-                  Your treatment list is empty. Go to the **Services catalog** above to pick the beauty routines you wish to reserve.
+                <p className="font-sans text-xs text-burgundy/60 leading-relaxed font-semibold">
+                  Your treatment list is empty. Go to the Services catalog above to pick the beauty routines you wish to reserve.
                 </p>
                 <a
                   href="#services"
@@ -248,7 +246,7 @@ export default function BookingForm({
                   {selectedServices.map((service) => (
                     <div
                       key={service.id}
-                      className="flex items-center justify-between bg-white/60 p-3 rounded-xl border border-pink-105 text-xs hover:border-pink-200"
+                      className="flex items-center justify-between bg-white/60 p-3 rounded-xl border border-rose-pale text-xs hover:border-pink-200"
                     >
                       <div className="space-y-0.5">
                         <p className="font-serif font-extrabold text-pink-900">{service.name}</p>
@@ -416,7 +414,7 @@ export default function BookingForm({
                 className={`w-full py-4.5 rounded-xl text-center font-sans uppercase font-extrabold tracking-widest text-xs border cursor-pointer transition-all ${
                   selectedServices.length === 0
                     ? 'bg-pink-50 text-pink-300 border-pink-100 cursor-not-allowed'
-                    : 'bg-pink-900 hover:bg-pink-850 text-white shadow-sm hover:shadow-md border-pink-900/10'
+                    : 'bg-pink-900 hover:bg-burgundy-light text-white shadow-sm hover:shadow-md border-pink-900/10'
                 }`}
               >
                 {isSubmitting ? (
