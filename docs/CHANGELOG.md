@@ -2,6 +2,11 @@
 
 ## 2026-06-27
 
+### Admin password bootstrap fix (Railway)
+- `ensureAdminUser()` runs on every startup — creates missing `admin_users` row from `ADMIN_PASSWORD`
+- `ADMIN_PASSWORD_RESET=true` one-time sync when password was seeded before env was set
+- Docs: DEPLOYMENT.md admin + Vercel troubleshooting
+
 ### Production deploy — Railway healthcheck fix
 - Moved `tsx` to production dependencies (fixes `npm start` on Railway)
 - Server listens on `0.0.0.0` before DB init so `/api/health` responds during startup
