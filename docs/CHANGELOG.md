@@ -2,6 +2,12 @@
 
 ## 2026-06-27
 
+### Gallery photos & README admin password
+- Replaced broken remote Unsplash URLs with 12 curated local images in `public/images/gallery/` (800×1000, 4:5 crop)
+- Startup migration upgrades databases still using legacy `images.unsplash.com` gallery URLs
+- README quick-start table now shows admin login URL with default password `lumiere2024`
+- Docs updated: FRONTEND.md, CHANGELOG.md
+
 ### Experience features (PWA, chat, visit duration, gift vouchers, accessibility)
 - PWA manifest + service worker for Add to Home Screen on phones
 - Admin-configurable live chat: WhatsApp FAB (default) or Tawk.to

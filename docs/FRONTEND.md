@@ -10,7 +10,7 @@ Single-page marketing site at `/` with admin at `/admin`.
 | Hero | `Hero` | `#hero` |
 | Packages | `PackagesSection` | `#packages` |
 | Services | `ServiceCatalog` | `#services` |
-| Gallery | `GallerySection` | `#gallery` |
+| Gallery | `GallerySection` | `#gallery` — filterable grid; default photos in `public/images/gallery/` |
 | Testimonials | `Testimonials` | `#testimonials` |
 | Google reviews | `GoogleReviewsSection` | `#google-reviews` |
 | FAQ | `FAQSection` | `#faq` |

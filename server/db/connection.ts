@@ -80,6 +80,9 @@ async function runMigrations() {
   const { ensureExperienceConfigSeeded } = await import('./migrateExperienceFeatures.ts');
   await ensureExperienceConfigSeeded();
 
+  const { ensureGalleryDefaultsMigrated } = await import('./migrateGalleryDefaults.ts');
+  await ensureGalleryDefaultsMigrated();
+
   const applied = await queryOne<{ version: string }>(
     'SELECT version FROM schema_migrations WHERE version = $1',
     [SCHEMA_VERSION],

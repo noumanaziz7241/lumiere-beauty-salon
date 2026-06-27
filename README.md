@@ -19,7 +19,7 @@
 
 The frontend and backend are **fully integrated** — the React app talks to the Express API for all live data (no localStorage for salon config or mock bookings).
 
-**Technical documentation:** [docs/README.md](docs/README.md) — architecture, frontend, API, database schema, admin portal, deployment.
+**Technical documentation:** [docs/README.md](docs/README.md) — architecture, frontend, API, database schema, admin portal, deployment. **Future work:** [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
@@ -155,10 +155,10 @@ npm run dev          # frontend :3000 + API :3001 together
 | URL | Service |
 |-----|---------|
 | [http://localhost:3000](http://localhost:3000) | Public site + admin UI |
-| [http://localhost:3000/admin](http://localhost:3000/admin) | Admin login |
+| [http://localhost:3000/admin](http://localhost:3000/admin) | Admin login — default password: **`lumiere2024`** |
 | [http://localhost:3001/api/health](http://localhost:3001/api/health) | API health check |
 
-**Default admin password:** `lumiere2024` (override with `ADMIN_PASSWORD` in `.env` before first run)
+**Admin password:** `lumiere2024` by default. Set `ADMIN_PASSWORD` in `.env` before the first run to override; change anytime from the admin dashboard.
 
 ### Run separately
 
