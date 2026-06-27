@@ -32,11 +32,47 @@ export interface AppointmentBooking {
   preferredTime: string;
   selectedServices: Service[];
   totalPrice: number;
+  subtotalPrice?: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  isReturningClient?: boolean;
   status: 'pending' | 'confirmed' | 'cancelled';
   notes?: string;
 }
 
-// Highly accurate service list based strictly on the user flyer, 
+export interface BookingWhatsAppNotifications {
+  salonUrl: string;
+  clientUrl: string;
+  salonMessage: string;
+  clientMessage: string;
+}
+
+export type BookingCreateResponse = AppointmentBooking & {
+  whatsappNotifications: BookingWhatsAppNotifications;
+};
+
+export interface GiftVoucher {
+  id: string;
+  code: string;
+  amountPKR: number;
+  purchaserName: string;
+  purchaserPhone: string;
+  purchaserEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  recipientPhone: string;
+  personalMessage?: string;
+  status: 'pending' | 'active' | 'redeemed' | 'expired' | 'cancelled';
+  expiresAt: string;
+  createdAt: string;
+  redeemedAt?: string;
+}
+
+export type GiftVoucherCreateResponse = GiftVoucher & {
+  paymentWhatsAppUrl: string;
+};
+
+// Highly accurate service list based strictly on the user flyer,
 // excluding Chocolate Wax and Bikini Wax from Waxing Services.
 export const SALON_SERVICES: ServiceCategory[] = [
   {

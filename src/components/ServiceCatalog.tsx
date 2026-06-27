@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Service, ServiceCategory, ServiceSubcategory } from '../types';
 import { useSalonConfig } from '../context/SalonConfigContext';
+import VisitDurationSummary from './VisitDurationSummary';
 
 interface ServiceCatalogProps {
   selectedServices: Service[];
@@ -300,18 +301,19 @@ export default function ServiceCatalog({
 
         {/* Floating summary bar when items are in queue */}
         {selectedServices.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg z-40 bg-white/90 border border-pink-200 p-4 rounded-2xl shadow-xl backdrop-blur-xl flex items-center justify-between gap-4 animate-slideUp">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-500 to-pink-700 flex items-center justify-center">
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg z-40 bg-white/90 border border-pink-200 p-4 rounded-2xl shadow-xl backdrop-blur-xl flex items-center justify-between gap-4 animate-slideUp">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-500 to-pink-700 flex items-center justify-center shrink-0">
                 <ShoppingBag className="w-4.5 h-4.5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-sans text-pink-900 uppercase tracking-widest font-bold">
                   {selectedServices.length} {selectedServices.length === 1 ? 'Service' : 'Services'} Chosen
                 </p>
                 <p className="text-[11px] font-sans text-pink-700 font-extrabold">
                   Est. Total: {formatPKR(selectedServices.reduce((sum, item) => sum + item.pricePKR, 0))}
                 </p>
+                <VisitDurationSummary services={selectedServices} variant="compact" className="text-pink-800 mt-0.5" />
               </div>
             </div>
             <button

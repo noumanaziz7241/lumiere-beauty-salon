@@ -119,6 +119,113 @@ export async function loadPublicConfig(): Promise<PublicSalonConfig> {
       })),
   }));
 
+  const promotionRow = await queryOne<{
+    enabled: boolean;
+    message: string;
+    link_url: string;
+    link_label: string;
+  }>('SELECT enabled, message, link_url, link_label FROM site_promotion WHERE id = 1');
+
+  const googleRow = await queryOne<{
+    enabled: boolean;
+    average_rating: string;
+    total_reviews: number;
+    reviews_url: string;
+    embed_url: string;
+  }>('SELECT * FROM site_google_reviews WHERE id = 1');
+
+  const googleSnippets = (
+    await queryAll<{
+      id: string;
+      author: string;
+      text: string;
+      rating: number;
+      relative_time: string | null;
+    }>('SELECT id, author, text, rating, relative_time FROM google_review_snippets ORDER BY sort_order')
+  ).map((s) => ({
+    id: s.id,
+    author: s.author,
+    text: s.text,
+    rating: s.rating,
+    relativeTime: s.relative_time ?? undefined,
+  }));
+
+  const faq = (
+    await queryAll<{
+      id: string;
+      question: string;
+      answer: string;
+      category: string | null;
+    }>('SELECT id, question, answer, category FROM faq_items ORDER BY sort_order')
+  ).map((f) => ({
+    id: f.id,
+    question: f.question,
+    answer: f.answer,
+    category: f.category ?? undefined,
+  }));
+
+  const gallery = (
+    await queryAll<{
+      id: string;
+      title: string;
+      category: string;
+      image_url: string;
+    }>('SELECT id, title, category, image_url FROM gallery_images ORDER BY sort_order')
+  ).map((g) => ({
+    id: g.id,
+    title: g.title,
+    category: g.category as import('../../../src/config/marketingDefaults.ts').GalleryImage['category'],
+    imageUrl: g.image_url,
+  }));
+
+  const packageRows = await queryAll<{
+    id: string;
+    name: string;
+    description: string;
+    badge: string;
+    highlight: string | null;
+  }>('SELECT id, name, description, badge, highlight FROM bridal_packages ORDER BY sort_order');
+
+  const packageServiceRows = await queryAll<{
+    package_id: string;
+    service_id: string;
+    sort_order: number;
+  }>('SELECT package_id, service_id, sort_order FROM bridal_package_services ORDER BY sort_order');
+
+  const packages = packageRows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    badge: p.badge as import('../../../src/config/marketingDefaults.ts').BridalPackage['badge'],
+    highlight: p.highlight ?? undefined,
+    serviceIds: packageServiceRows.filter((ps) => ps.package_id === p.id).map((ps) => ps.service_id),
+  }));
+
+  const chatRow = await queryOne<{
+    enabled: boolean;
+    provider: string;
+    whatsapp_label: string;
+    tawk_property_id: string;
+    tawk_widget_id: string;
+  }>('SELECT * FROM site_chat WHERE id = 1');
+
+  const giftRow = await queryOne<{
+    enabled: boolean;
+    title: string;
+    subtitle: string;
+    validity_months: number;
+  }>('SELECT * FROM site_gift_voucher_config WHERE id = 1');
+
+  const giftAmounts = (
+    await queryAll<{ amount_pkr: number }>(
+      'SELECT amount_pkr FROM gift_voucher_amounts ORDER BY sort_order',
+    )
+  ).map((r) => r.amount_pkr);
+
+  const giftTerms = (
+    await queryAll<{ content: string }>('SELECT content FROM gift_voucher_terms ORDER BY sort_order')
+  ).map((r) => r.content);
+
   return {
     contact: {
       phone: contact.phone,
@@ -162,6 +269,65 @@ export async function loadPublicConfig(): Promise<PublicSalonConfig> {
     testimonials,
     services,
     timeSlots,
+    promotion: promotionRow
+      ? {
+          enabled: promotionRow.enabled,
+          message: promotionRow.message,
+          linkUrl: promotionRow.link_url || undefined,
+          linkLabel: promotionRow.link_label || undefined,
+        }
+      : { enabled: false, message: '' },
+    googleReviews: googleRow
+      ? {
+          enabled: googleRow.enabled,
+          averageRating: Number(googleRow.average_rating),
+          totalReviews: googleRow.total_reviews,
+          reviewsUrl: googleRow.reviews_url,
+          embedUrl: googleRow.embed_url || undefined,
+          snippets: googleSnippets,
+        }
+      : {
+          enabled: false,
+          averageRating: 5,
+          totalReviews: 0,
+          reviewsUrl: '',
+          snippets: [],
+        },
+    faq,
+    packages,
+    gallery,
+    chat: chatRow
+      ? {
+          enabled: chatRow.enabled,
+          provider: chatRow.provider as 'whatsapp' | 'tawk',
+          whatsappLabel: chatRow.whatsapp_label,
+          tawkPropertyId: chatRow.tawk_property_id,
+          tawkWidgetId: chatRow.tawk_widget_id,
+        }
+      : {
+          enabled: true,
+          provider: 'whatsapp',
+          whatsappLabel: 'Book on WhatsApp',
+          tawkPropertyId: '',
+          tawkWidgetId: '',
+        },
+    giftVouchers: giftRow
+      ? {
+          enabled: giftRow.enabled,
+          title: giftRow.title,
+          subtitle: giftRow.subtitle,
+          validityMonths: giftRow.validity_months,
+          amountsPKR: giftAmounts,
+          terms: giftTerms,
+        }
+      : {
+          enabled: false,
+          title: 'Gift Vouchers',
+          subtitle: '',
+          validityMonths: 12,
+          amountsPKR: [],
+          terms: [],
+        },
   };
 }
 

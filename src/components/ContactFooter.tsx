@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, ShieldCheck, Heart, Sparkles, ChevronUp, MessageCircle } from 'lucide-react';
 import { useSalonConfig } from '../context/SalonConfigContext';
+import { buildInquiryMessage, buildWhatsAppUrl } from '../lib/whatsapp';
 
 interface ContactFooterProps {
   onBackToTop: () => void;
@@ -10,7 +11,7 @@ export default function ContactFooter({ onBackToTop }: ContactFooterProps) {
   const { config } = useSalonConfig();
   const { contact, footer, businessHours, hoursNote } = config;
   const currentYear = new Date().getFullYear();
-  const whatsappLink = `https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`;
+  const whatsappLink = buildWhatsAppUrl(contact.whatsapp, buildInquiryMessage());
 
   return (
     <footer id="hours" className="bg-burgundy border-t border-burgundy-dark text-rose-pale relative">

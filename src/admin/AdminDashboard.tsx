@@ -3,13 +3,33 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, LogOut, Settings, Phone, FileText, Scissors,
   Star, Clock, Save, RotateCcw, Plus, Trash2, Home, CalendarCheck,
+  Megaphone, HelpCircle, Images, Gift, Ticket,
 } from 'lucide-react';
 import { useSalonConfig } from '../context/SalonConfigContext';
 import { SalonConfig, Testimonial, BusinessHours } from '../config/defaults';
 import { ServiceCategory, Service, AppointmentBooking } from '../types';
 import { api } from '../api/client';
+import {
+  MarketingPanel,
+  FaqAdminPanel,
+  GalleryAdminPanel,
+  PackagesAdminPanel,
+  VouchersAdminPanel,
+} from './AdminMarketingPanels';
 
-type Tab = 'contact' | 'content' | 'services' | 'testimonials' | 'hours' | 'bookings' | 'settings';
+type Tab =
+  | 'contact'
+  | 'content'
+  | 'services'
+  | 'testimonials'
+  | 'marketing'
+  | 'faq'
+  | 'gallery'
+  | 'packages'
+  | 'vouchers'
+  | 'hours'
+  | 'bookings'
+  | 'settings';
 
 export default function AdminDashboard() {
   const { config, updateConfig, resetConfig, isAdmin, logout } = useSalonConfig();
@@ -46,6 +66,11 @@ export default function AdminDashboard() {
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'contact', label: 'Contact', icon: Phone },
     { id: 'content', label: 'Content', icon: FileText },
+    { id: 'marketing', label: 'Marketing', icon: Megaphone },
+    { id: 'packages', label: 'Packages', icon: Gift },
+    { id: 'vouchers', label: 'Vouchers', icon: Ticket },
+    { id: 'gallery', label: 'Gallery', icon: Images },
+    { id: 'faq', label: 'FAQ', icon: HelpCircle },
     { id: 'services', label: 'Services', icon: Scissors },
     { id: 'testimonials', label: 'Reviews', icon: Star },
     { id: 'hours', label: 'Hours', icon: Clock },
@@ -129,6 +154,19 @@ export default function AdminDashboard() {
             {activeTab === 'content' && (
               <ContentPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} textareaClass={textareaClass} />
             )}
+            {activeTab === 'marketing' && (
+              <MarketingPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} />
+            )}
+            {activeTab === 'faq' && (
+              <FaqAdminPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} textareaClass={textareaClass} />
+            )}
+            {activeTab === 'gallery' && (
+              <GalleryAdminPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} />
+            )}
+            {activeTab === 'packages' && (
+              <PackagesAdminPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} textareaClass={textareaClass} />
+            )}
+            {activeTab === 'vouchers' && <VouchersAdminPanel />}
             {activeTab === 'services' && (
               <ServicesPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} />
             )}
@@ -561,12 +599,17 @@ function BookingsPanel({ labelClass, inputClass }: { labelClass: string; inputCl
   const [bookings, setBookings] = useState<AppointmentBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
+  const [daysWindow, setDaysWindow] = useState(20);
 
   const loadBookings = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.getBookings(filterStatus ? { status: filterStatus } : undefined);
+      const data = await api.getBookings({
+        status: filterStatus || undefined,
+        daysBack: 20,
+      });
       setBookings(data.bookings);
+      setDaysWindow(data.daysBack);
     } catch {
       setBookings([]);
     } finally {
@@ -586,8 +629,13 @@ function BookingsPanel({ labelClass, inputClass }: { labelClass: string; inputCl
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="font-serif text-xl font-black text-burgundy">Appointments</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-xl font-black text-burgundy">Appointments</h2>
+          <p className="text-[11px] text-burgundy/60 font-sans mt-1">
+            Showing appointments from the last {daysWindow} days (by date). Older records stay in the database.
+          </p>
+        </div>
         <select
           className={inputClass + ' w-auto text-xs'}
           value={filterStatus}
@@ -625,6 +673,11 @@ function BookingsPanel({ labelClass, inputClass }: { labelClass: string; inputCl
                 <span>{b.customerPhone}</span>
                 <span className="font-bold">{formatPKR(b.totalPrice)}</span>
               </div>
+              {b.discountAmount != null && b.discountAmount > 0 && (
+                <p className="text-[10px] font-semibold text-green-700">
+                  Repeat client: {b.discountPercent}% off (−{formatPKR(b.discountAmount)})
+                </p>
+              )}
               <p className="text-[10px] text-burgundy/50">
                 {b.selectedServices.map((s) => s.name).join(', ')}
               </p>

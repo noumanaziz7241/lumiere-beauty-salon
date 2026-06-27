@@ -8,6 +8,8 @@ import { initStore } from './store/index.ts';
 import authRoutes from './routes/auth.ts';
 import configRoutes from './routes/config.ts';
 import bookingRoutes from './routes/bookings.ts';
+import uploadRoutes from './routes/upload.ts';
+import voucherRoutes from './routes/vouchers.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3001;
@@ -26,6 +28,11 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/vouchers', voucherRoutes);
+
+const uploadsPath = join(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 if (process.env.NODE_ENV === 'production') {
   const distPath = join(__dirname, '../dist');
@@ -43,8 +50,18 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 async function start() {
   try {
     await initStore();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Lumière API server running on http://localhost:${PORT}`);
+    });
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(
+          `\nPort ${PORT} is already in use. Stop the old server with:\n  npm run dev:stop\nThen run:\n  npm run dev\n`,
+        );
+      } else {
+        console.error('Failed to start server:', error);
+      }
+      process.exit(1);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

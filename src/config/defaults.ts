@@ -1,5 +1,33 @@
 import { ServiceCategory } from '../types';
 import { SALON_SERVICES } from '../types';
+import {
+  BridalPackage,
+  FaqItem,
+  GalleryImage,
+  GoogleReviewsConfig,
+  PromotionConfig,
+  DEFAULT_PROMOTION,
+  DEFAULT_GOOGLE_REVIEWS,
+  DEFAULT_FAQ,
+  DEFAULT_PACKAGES,
+  DEFAULT_GALLERY,
+} from './marketingDefaults';
+import {
+  ChatConfig,
+  GiftVoucherConfig,
+  DEFAULT_CHAT,
+  DEFAULT_GIFT_VOUCHERS,
+} from './experienceDefaults';
+
+export type {
+  BridalPackage,
+  FaqItem,
+  GalleryImage,
+  GoogleReviewsConfig,
+  PromotionConfig,
+} from './marketingDefaults';
+
+export type { ChatConfig, GiftVoucherConfig, ChatProvider } from './experienceDefaults';
 
 export interface BusinessHours {
   days: string;
@@ -63,6 +91,13 @@ export interface SalonConfig {
   testimonials: Testimonial[];
   services: ServiceCategory[];
   timeSlots: string[];
+  promotion: PromotionConfig;
+  googleReviews: GoogleReviewsConfig;
+  faq: FaqItem[];
+  packages: BridalPackage[];
+  gallery: GalleryImage[];
+  chat: ChatConfig;
+  giftVouchers: GiftVoucherConfig;
   adminPassword: string;
 }
 
@@ -176,6 +211,13 @@ export const DEFAULT_SALON_CONFIG: SalonConfig = {
     '10:30 AM', '11:30 AM', '12:30 PM', '01:30 PM', '02:30 PM',
     '03:30 PM', '04:30 PM', '05:30 PM', '06:30 PM', '07:30 PM',
   ],
+  promotion: DEFAULT_PROMOTION,
+  googleReviews: DEFAULT_GOOGLE_REVIEWS,
+  faq: DEFAULT_FAQ,
+  packages: DEFAULT_PACKAGES,
+  gallery: DEFAULT_GALLERY,
+  chat: DEFAULT_CHAT,
+  giftVouchers: DEFAULT_GIFT_VOUCHERS,
   adminPassword: 'lumiere2024',
 };
 

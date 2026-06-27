@@ -1,13 +1,20 @@
 import type { AppointmentBooking } from '../../../src/types.ts';
+import { ADMIN_BOOKINGS_DAYS, normalizePhoneKey } from '../../../shared/bookingPricing.ts';
 import { query, queryOne, queryAll, withTransaction } from '../connection.ts';
 
 export async function getBookings(filters?: {
   date?: string;
   status?: string;
+  daysBack?: number;
 }): Promise<AppointmentBooking[]> {
   let sql = 'SELECT * FROM bookings WHERE 1=1';
-  const params: string[] = [];
+  const params: (string | number)[] = [];
   let paramIdx = 1;
+
+  if (filters?.daysBack != null && filters.daysBack > 0) {
+    sql += ` AND preferred_date >= to_char(CURRENT_DATE - $${paramIdx++}::integer, 'YYYY-MM-DD')`;
+    params.push(filters.daysBack);
+  }
 
   if (filters?.date) {
     sql += ` AND preferred_date = $${paramIdx++}`;
@@ -24,6 +31,20 @@ export async function getBookings(filters?: {
   return Promise.all(rows.map(rowToBooking));
 }
 
+export async function hasConfirmedBookingForPhone(phone: string): Promise<boolean> {
+  const phoneKey = normalizePhoneKey(phone);
+  if (!phoneKey) return false;
+
+  const row = await queryOne<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM bookings
+     WHERE status = 'confirmed'
+     AND RIGHT(regexp_replace(customer_phone, '\\D', '', 'g'), 10) = $1`,
+    [phoneKey],
+  );
+
+  return row ? parseInt(row.count, 10) > 0 : false;
+}
+
 export async function getBookingById(id: string): Promise<AppointmentBooking | null> {
   const row = await queryOne<BookingRow>('SELECT * FROM bookings WHERE id = $1', [id]);
   if (!row) return null;
@@ -31,10 +52,17 @@ export async function getBookingById(id: string): Promise<AppointmentBooking | n
 }
 
 export async function createBooking(booking: AppointmentBooking): Promise<AppointmentBooking> {
+  const subtotal = booking.subtotalPrice ?? booking.totalPrice;
+  const discountPercent = booking.discountPercent ?? 0;
+  const discountAmount = booking.discountAmount ?? 0;
+
   await withTransaction(async (client) => {
     await client.query(
-      `INSERT INTO bookings (id, customer_name, customer_phone, customer_email, preferred_date, preferred_time, total_price, status, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      `INSERT INTO bookings (
+         id, customer_name, customer_phone, customer_email, preferred_date, preferred_time,
+         total_price, subtotal_pkr, discount_percent, discount_pkr, status, notes
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         booking.id,
         booking.customerName,
@@ -43,6 +71,9 @@ export async function createBooking(booking: AppointmentBooking): Promise<Appoin
         booking.preferredDate,
         booking.preferredTime,
         booking.totalPrice,
+        subtotal,
+        discountPercent,
+        discountAmount,
         booking.status,
         booking.notes ?? null,
       ],
@@ -92,6 +123,8 @@ export function createBookingId(): string {
   return 'LM-' + Math.floor(100000 + Math.random() * 900000);
 }
 
+export { ADMIN_BOOKINGS_DAYS };
+
 interface BookingRow {
   id: string;
   customer_name: string;
@@ -100,6 +133,9 @@ interface BookingRow {
   preferred_date: string;
   preferred_time: string;
   total_price: number;
+  subtotal_pkr: number | null;
+  discount_percent: number | null;
+  discount_pkr: number | null;
   status: AppointmentBooking['status'];
   notes: string | null;
 }
@@ -117,6 +153,10 @@ async function rowToBooking(row: BookingRow): Promise<AppointmentBooking> {
     [row.id],
   );
 
+  const subtotalPrice = row.subtotal_pkr ?? row.total_price;
+  const discountPercent = row.discount_percent ?? 0;
+  const discountAmount = row.discount_pkr ?? 0;
+
   return {
     id: row.id,
     customerName: row.customer_name,
@@ -125,6 +165,10 @@ async function rowToBooking(row: BookingRow): Promise<AppointmentBooking> {
     preferredDate: row.preferred_date,
     preferredTime: row.preferred_time,
     totalPrice: row.total_price,
+    subtotalPrice,
+    discountPercent,
+    discountAmount,
+    isReturningClient: discountPercent > 0,
     status: row.status,
     notes: row.notes ?? undefined,
     selectedServices: services.map((s) => ({

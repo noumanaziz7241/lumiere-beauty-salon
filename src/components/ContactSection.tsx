@@ -1,12 +1,13 @@
 import React from 'react';
 import { Phone, Mail, MapPin, MessageCircle, Instagram, Facebook } from 'lucide-react';
 import { useSalonConfig } from '../context/SalonConfigContext';
+import { buildInquiryMessage, buildWhatsAppUrl } from '../lib/whatsapp';
 
 export default function ContactSection() {
   const { config } = useSalonConfig();
   const { contact, social } = config;
 
-  const whatsappLink = `https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`;
+  const whatsappLink = buildWhatsAppUrl(contact.whatsapp, buildInquiryMessage());
 
   return (
     <section id="contact" className="py-20 bg-gradient-to-b from-cream to-cream-warm border-t border-rose-pale/50">

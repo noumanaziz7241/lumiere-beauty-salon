@@ -8,8 +8,19 @@ import {
   findServiceById,
   getBookedSlotsForDate,
   createBookingId,
+  hasConfirmedBookingForPhone,
+  ADMIN_BOOKINGS_DAYS,
 } from '../store/index.ts';
-import type { AppointmentBooking } from '../../src/types.ts';
+import type { AppointmentBooking, BookingCreateResponse } from '../../src/types.ts';
+import {
+  bookingToWhatsAppDetails,
+  buildBookingNotificationUrls,
+} from '../../shared/whatsappBooking.ts';
+import {
+  calculateBookingPrice,
+  REPEAT_CLIENT_DISCOUNT_PERCENT,
+} from '../../shared/bookingPricing.ts';
+import { sendBookingCreatedEmails, sendBookingConfirmedEmail } from '../services/emailService.ts';
 
 const router = Router();
 
@@ -24,6 +35,24 @@ router.get('/availability', async (req, res, next) => {
     const bookedSlots = await getBookedSlotsForDate(date);
     const availableSlots = config.timeSlots.filter((slot) => !bookedSlots.includes(slot));
     res.json({ date, availableSlots, bookedSlots });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/returning-client', async (req, res, next) => {
+  try {
+    const phone = req.query.phone as string;
+    if (!phone?.trim()) {
+      res.status(400).json({ error: 'Phone query param required' });
+      return;
+    }
+
+    const isReturningClient = await hasConfirmedBookingForPhone(phone);
+    res.json({
+      isReturningClient,
+      discountPercent: isReturningClient ? REPEAT_CLIENT_DISCOUNT_PERCENT : 0,
+    });
   } catch (error) {
     next(error);
   }
@@ -80,7 +109,9 @@ router.post('/', async (req, res, next) => {
       selectedServices.push(found.service);
     }
 
-    const totalPrice = selectedServices.reduce((sum, s) => sum + s.pricePKR, 0);
+    const subtotal = selectedServices.reduce((sum, s) => sum + s.pricePKR, 0);
+    const isReturningClient = await hasConfirmedBookingForPhone(customerPhone.trim());
+    const pricing = calculateBookingPrice(subtotal, isReturningClient);
 
     const booking: AppointmentBooking = {
       id: createBookingId(),
@@ -90,13 +121,31 @@ router.post('/', async (req, res, next) => {
       preferredDate,
       preferredTime,
       selectedServices,
-      totalPrice,
+      subtotalPrice: pricing.subtotalPrice,
+      discountPercent: pricing.discountPercent,
+      discountAmount: pricing.discountAmount,
+      totalPrice: pricing.totalPrice,
+      isReturningClient: pricing.isReturningClient,
       status: 'pending',
       notes: notes?.trim(),
     };
 
     const saved = await insertBooking(booking);
-    res.status(201).json(saved);
+    const whatsappNotifications = buildBookingNotificationUrls(
+      config.contact.whatsapp,
+      bookingToWhatsAppDetails(saved),
+    );
+
+    const response: BookingCreateResponse = {
+      ...saved,
+      whatsappNotifications,
+    };
+
+    void sendBookingCreatedEmails(saved, config).catch((err) =>
+      console.error('[email] booking created:', err),
+    );
+
+    res.status(201).json(response);
   } catch (error) {
     next(error);
   }
@@ -106,8 +155,15 @@ router.get('/', requireAuth, async (req, res, next) => {
   try {
     const date = req.query.date as string | undefined;
     const status = req.query.status as string | undefined;
-    const bookings = await getBookings({ date, status });
-    res.json({ bookings });
+    const daysBackParam = req.query.daysBack as string | undefined;
+    const daysBack = daysBackParam ? parseInt(daysBackParam, 10) : ADMIN_BOOKINGS_DAYS;
+
+    const bookings = await getBookings({
+      date,
+      status,
+      daysBack: Number.isFinite(daysBack) && daysBack > 0 ? daysBack : ADMIN_BOOKINGS_DAYS,
+    });
+    res.json({ bookings, daysBack: daysBack || ADMIN_BOOKINGS_DAYS });
   } catch (error) {
     next(error);
   }
@@ -127,6 +183,13 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     if (!updated) {
       res.status(404).json({ error: 'Booking not found' });
       return;
+    }
+
+    if (status === 'confirmed') {
+      const config = await getPublicConfig();
+      void sendBookingConfirmedEmail(updated, config).catch((err) =>
+        console.error('[email] booking confirmed:', err),
+      );
     }
 
     res.json(updated);

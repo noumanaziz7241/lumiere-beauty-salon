@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, Sparkles } from 'lucide-react';
+import React from 'react';
+import { Heart, Sparkles, MessageCircle } from 'lucide-react';
 import { useSalonConfig } from '../context/SalonConfigContext';
+import { buildInquiryMessage, buildWhatsAppUrl } from '../lib/whatsapp';
 import heroBg from '../assets/images/salon_hero_bg_1780153729412.png';
 
 interface HeroProps {
@@ -10,7 +11,8 @@ interface HeroProps {
 
 export default function Hero({ onLearnMoreClick, onBookClick }: HeroProps) {
   const { config } = useSalonConfig();
-  const { hero } = config;
+  const { hero, contact } = config;
+  const whatsappLink = buildWhatsAppUrl(contact.whatsapp, buildInquiryMessage());
 
   return (
     <section
@@ -78,6 +80,15 @@ export default function Hero({ onLearnMoreClick, onBookClick }: HeroProps) {
           >
             Book Appointment
           </button>
+          <a
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-8 py-4 rounded-xl font-sans uppercase font-extrabold tracking-widest text-xs bg-green-600 hover:bg-green-500 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer inline-flex items-center justify-center gap-2"
+          >
+            <MessageCircle className="w-4 h-4" />
+            WhatsApp Us
+          </a>
           <button
             onClick={onLearnMoreClick}
             className="w-full sm:w-auto px-8 py-4 rounded-xl font-sans uppercase font-extrabold tracking-widest text-xs bg-white/60 hover:bg-white/90 text-burgundy border border-rose-pale hover:border-rose-light focus:outline-none transition-all duration-300 backdrop-blur cursor-pointer"

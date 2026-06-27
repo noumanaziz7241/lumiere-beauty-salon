@@ -74,6 +74,12 @@ async function runMigrations() {
   const schemaSql = readFileSync(join(__dirname, 'schema.sql'), 'utf-8');
   await query(schemaSql);
 
+  const { ensureExtendedConfigSeeded } = await import('./migrateExtendedConfig.ts');
+  await ensureExtendedConfigSeeded();
+
+  const { ensureExperienceConfigSeeded } = await import('./migrateExperienceFeatures.ts');
+  await ensureExperienceConfigSeeded();
+
   const applied = await queryOne<{ version: string }>(
     'SELECT version FROM schema_migrations WHERE version = $1',
     [SCHEMA_VERSION],

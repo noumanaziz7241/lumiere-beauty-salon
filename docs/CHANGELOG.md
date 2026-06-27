@@ -1,0 +1,27 @@
+# Changelog
+
+## 2026-06-27
+
+### Experience features (PWA, chat, visit duration, gift vouchers, accessibility)
+- PWA manifest + service worker for Add to Home Screen on phones
+- Admin-configurable live chat: WhatsApp FAB (default) or Tawk.to
+- Estimated visit duration when 2+ services selected in catalog and booking
+- Gift voucher purchase flow with admin activation and code verification
+- Accessibility toolbar: larger text and high contrast modes (saved in browser)
+- Docs updated: BACKEND-API.md, FRONTEND.md, ADMIN-PORTAL.md, DATABASE.md, CHANGELOG.md
+
+### Marketing features batch (email, gallery, packages, Google reviews, FAQ, promotions)
+- Automatic email notifications via Gmail SMTP when bookings are created (salon + client) and when admin confirms (client)
+- Admin-managed promotion banner, FAQ, bridal/party packages, photo gallery, and Google reviews section
+- Gallery image upload (`POST /api/upload/gallery`) with static serving at `/uploads`
+- Bridal packages page with “Book this package” pre-filling services in the booking form
+- New admin tabs: Marketing, Packages, Gallery, FAQ
+- Vite dev proxy for `/uploads`; SMTP env vars in `.env.example`
+- Docs updated: BACKEND-API.md, FRONTEND.md, DATABASE.md, ADMIN-PORTAL.md, ARCHITECTURE.md
+
+### Repeat client discount & admin booking window
+- 10% discount for returning clients (prior confirmed booking on same phone)
+- Admin bookings list defaults to last 20 days by preferred date
+
+### WhatsApp booking (free wa.me flow)
+- Book Online and Book via WhatsApp both save via API; in-page QR/message panel for salon and client

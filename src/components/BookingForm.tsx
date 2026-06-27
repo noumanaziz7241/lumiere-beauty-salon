@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Phone, Mail, FileText, Ticket, Trash2, Scissors } from 'lucide-react';
-import { Service, AppointmentBooking } from '../types';
+import { Calendar, Clock, User, Phone, Mail, FileText, Ticket, Trash2, Scissors, MessageCircle, Sparkles } from 'lucide-react';
+import { Service, AppointmentBooking, BookingWhatsAppNotifications } from '../types';
 import { useSalonConfig } from '../context/SalonConfigContext';
 import { api } from '../api/client';
+import WhatsAppMessagePanel from './WhatsAppMessagePanel';
+import VisitDurationSummary from './VisitDurationSummary';
+import { calculateBookingPrice, REPEAT_CLIENT_DISCOUNT_PERCENT } from '../../shared/bookingPricing.ts';
 
 interface BookingFormProps {
   selectedServices: Service[];
@@ -31,6 +34,25 @@ export default function BookingForm({
   const [submitError, setSubmitError] = useState('');
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [confirmedBooking, setConfirmedBooking] = useState<AppointmentBooking | null>(null);
+  const [whatsappNotifications, setWhatsappNotifications] =
+    useState<BookingWhatsAppNotifications | null>(null);
+  const [isReturningClient, setIsReturningClient] = useState(false);
+
+  useEffect(() => {
+    const phone = customerPhone.replace(/\D/g, '');
+    if (phone.length < 10) {
+      setIsReturningClient(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      api.checkReturningClient(customerPhone)
+        .then((data) => setIsReturningClient(data.isReturningClient))
+        .catch(() => setIsReturningClient(false));
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [customerPhone]);
 
   useEffect(() => {
     if (!preferredDate) {
@@ -48,6 +70,7 @@ export default function BookingForm({
   }, [preferredDate, preferredTime]);
 
   const totalAmount = selectedServices.reduce((sum, item) => sum + item.pricePKR, 0);
+  const pricing = calculateBookingPrice(totalAmount, isReturningClient);
 
   const formatPKR = (amount: number) => {
     return new Intl.NumberFormat('en-PK', {
@@ -58,14 +81,31 @@ export default function BookingForm({
     }).format(amount);
   };
 
-  const handleBookingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customerName || !customerPhone || !preferredDate || !preferredTime) {
-      alert('Please fill out all required fields: Name, Phone, Date, and Time.');
-      return;
-    }
+  const validateBookingForm = (): string[] => {
+    const issues: string[] = [];
     if (selectedServices.length === 0) {
-      alert('Please select at least one beauty service first.');
+      issues.push('Select at least one service from the catalog above');
+    }
+    if (!customerName.trim()) issues.push('Enter your full name');
+    if (!customerPhone.trim()) issues.push('Enter your phone number');
+    if (!preferredDate) issues.push('Choose a preferred date');
+    if (!preferredTime) issues.push('Select a time slot');
+    return issues;
+  };
+
+  const bookingIssues = validateBookingForm();
+  const isBookingReady = bookingIssues.length === 0;
+
+  useEffect(() => {
+    if (submitError && isBookingReady) {
+      setSubmitError('');
+    }
+  }, [submitError, isBookingReady]);
+
+  const submitBooking = async () => {
+    const issues = validateBookingForm();
+    if (issues.length > 0) {
+      setSubmitError(issues.join('. ') + '.');
       return;
     }
 
@@ -73,7 +113,7 @@ export default function BookingForm({
     setSubmitError('');
 
     try {
-      const newBooking = await api.createBooking({
+      const response = await api.createBooking({
         customerName,
         customerPhone,
         customerEmail,
@@ -82,7 +122,8 @@ export default function BookingForm({
         serviceIds: selectedServices.map((s) => s.id),
         notes,
       });
-      setConfirmedBooking(newBooking);
+      setConfirmedBooking(response);
+      setWhatsappNotifications(response.whatsappNotifications);
       onBookingSuccess();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create booking');
@@ -90,6 +131,16 @@ export default function BookingForm({
       setIsSubmitting(false);
     }
   };
+
+  const handleBookingSubmit = async () => {
+    await submitBooking();
+  };
+
+  const handleWhatsAppBooking = async () => {
+    await submitBooking();
+  };
+
+  const today = new Date().toISOString().split('T')[0];
 
   const handleReset = () => {
     setCustomerName('');
@@ -99,6 +150,7 @@ export default function BookingForm({
     setPreferredTime('');
     setNotes('');
     setConfirmedBooking(null);
+    setWhatsappNotifications(null);
     onClearServices();
   };
 
@@ -106,7 +158,7 @@ export default function BookingForm({
   if (confirmedBooking) {
     return (
       <section id="appointment" className="py-20 bg-gradient-to-b from-[#fdf8f6] via-white to-[#fdf8f6] flex items-center justify-center px-4 sm:px-6">
-        <div className="w-full max-w-xl bg-white/60 border border-white/80 rounded-3xl overflow-hidden shadow-xl backdrop-blur-xl relative animate-fadeIn duration-500">
+        <div className="w-full max-w-3xl bg-white/60 border border-white/80 rounded-3xl overflow-hidden shadow-xl backdrop-blur-xl relative animate-fadeIn duration-500">
           
           {/* Ticket Header Graphic Accent */}
           <div className="bg-[#501d2c] p-6 text-center relative">
@@ -168,12 +220,58 @@ export default function BookingForm({
             </div>
 
             {/* Total */}
-            <div className="bg-white/70 p-4.5 rounded-2xl border border-pink-200 flex justify-between items-center">
-              <span className="text-xs uppercase tracking-widest text-pink-900/60 font-bold">Total Service Fee</span>
-              <span className="font-sans text-xl font-extrabold text-pink-900">{formatPKR(confirmedBooking.totalPrice)}</span>
+            <div className="bg-white/70 p-4.5 rounded-2xl border border-pink-200 space-y-2">
+              {confirmedBooking.discountAmount && confirmedBooking.discountAmount > 0 ? (
+                <>
+                  <div className="flex justify-between items-center text-xs text-pink-900/70">
+                    <span>Subtotal</span>
+                    <span>{formatPKR(confirmedBooking.subtotalPrice ?? confirmedBooking.totalPrice)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-green-700 font-semibold">
+                    <span>Repeat client discount ({confirmedBooking.discountPercent}%)</span>
+                    <span>-{formatPKR(confirmedBooking.discountAmount)}</span>
+                  </div>
+                </>
+              ) : null}
+              <div className="flex justify-between items-center">
+                <span className="text-xs uppercase tracking-widest text-pink-900/60 font-bold">Total Service Fee</span>
+                <span className="font-sans text-xl font-extrabold text-pink-900">{formatPKR(confirmedBooking.totalPrice)}</span>
+              </div>
             </div>
 
-            {/* Arrival reminder */}
+            {whatsappNotifications && (
+              <div className="space-y-4 border-t border-pink-100/50 pt-6">
+                <div className="text-center space-y-1">
+                  <p className="text-xs font-bold uppercase tracking-wider text-green-800 flex items-center justify-center gap-1.5">
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp on this page
+                  </p>
+                  <p className="text-[11px] text-burgundy/70 font-sans leading-relaxed max-w-lg mx-auto">
+                    Scan the QR code or use Open WhatsApp below. Tap <strong>Send</strong> in each
+                    chat — messages are not sent automatically.
+                  </p>
+                </div>
+
+                <WhatsAppMessagePanel
+                  step={1}
+                  title="Notify the salon"
+                  description="Scan or open WhatsApp to send your booking to us."
+                  message={whatsappNotifications.salonMessage}
+                  whatsappUrl={whatsappNotifications.salonUrl}
+                  accent="salon"
+                />
+
+                <WhatsAppMessagePanel
+                  step={2}
+                  title="Save your confirmation"
+                  description="Scan or open WhatsApp to keep a copy on your phone."
+                  message={whatsappNotifications.clientMessage}
+                  whatsappUrl={whatsappNotifications.clientUrl}
+                  accent="client"
+                />
+              </div>
+            )}
+
             <div className="bg-pink-50 border border-[#501d2c]/10 p-4 rounded-2xl">
               <p className="text-[11px] text-burgundy/75 font-sans font-medium">
                 Please arrive 10 minutes prior to your scheduled time block. Ladies Only venue.
@@ -196,8 +294,8 @@ export default function BookingForm({
               <span className="text-[8px] font-mono uppercase tracking-widest text-pink-900/40 font-bold">LUMIÈRE ONLINE SYSTEM RECEIPT</span>
             </div>
 
-            {/* reset button */}
             <button
+              type="button"
               onClick={handleReset}
               className="w-full py-3.5 rounded-xl font-sans text-xs uppercase font-extrabold tracking-widest text-center bg-pink-900 hover:bg-burgundy-light text-white shadow-sm transition-all cursor-pointer"
             >
@@ -284,6 +382,8 @@ export default function BookingForm({
                   ))}
                 </div>
 
+                <VisitDurationSummary services={selectedServices} className="mt-2" />
+
                 {/* Pricing summary details */}
                 <div className="border-t border-pink-100/60 pt-4.5 space-y-2.5">
                   <div className="flex justify-between items-center text-xs text-pink-900/60 font-semibold">
@@ -294,9 +394,34 @@ export default function BookingForm({
                     <span>Aesthetic Consultation:</span>
                     <span className="text-pink-700 font-bold uppercase tracking-wider text-[10px] bg-pink-50 border border-pink-200 px-2 py-0.5 rounded-full">Free</span>
                   </div>
+                  {isReturningClient && selectedServices.length > 0 && (
+                    <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2.5 flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[11px] font-bold text-green-800">
+                          Welcome back! {REPEAT_CLIENT_DISCOUNT_PERCENT}% repeat client discount
+                        </p>
+                        <p className="text-[10px] text-green-700/80 mt-0.5">
+                          Applied to clients with a previous confirmed visit.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {pricing.discountAmount > 0 && (
+                    <>
+                      <div className="flex justify-between items-center text-xs text-pink-900/60 font-semibold">
+                        <span>Subtotal:</span>
+                        <span className="font-bold text-pink-900">{formatPKR(pricing.subtotalPrice)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-green-700 font-semibold">
+                        <span>Loyalty discount ({pricing.discountPercent}%):</span>
+                        <span>-{formatPKR(pricing.discountAmount)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="border-t border-pink-100/60 pt-3 flex justify-between items-center">
                     <span className="font-serif text-sm font-bold text-pink-900 uppercase tracking-wider">Est. Final Total</span>
-                    <span className="font-sans text-xl font-extrabold text-pink-900">{formatPKR(totalAmount)}</span>
+                    <span className="font-sans text-xl font-extrabold text-pink-900">{formatPKR(pricing.totalPrice)}</span>
                   </div>
                 </div>
               </div>
@@ -309,7 +434,10 @@ export default function BookingForm({
               Fill Reservation Form
             </h3>
 
-            <form onSubmit={handleBookingSubmit} className="space-y-6">
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="space-y-6"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Name */}
                 <div className="space-y-2">
@@ -357,6 +485,7 @@ export default function BookingForm({
                     type="date"
                     id="date"
                     required
+                    min={today}
                     value={preferredDate}
                     onChange={(e) => setPreferredDate(e.target.value)}
                     className="w-full bg-white/70 text-pink-900 py-3.5 px-4 rounded-xl border border-pink-100 focus:border-pink-500 outline-none font-sans text-sm transition-all focus:ring-0 shadow-sm cursor-pointer"
@@ -427,32 +556,48 @@ export default function BookingForm({
                 />
               </div>
 
-              {submitError && (
-                <p className="text-red-500 text-xs font-semibold text-center">{submitError}</p>
+              {!isBookingReady && !submitError && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[11px] text-amber-900 font-sans leading-relaxed">
+                  <p className="font-bold uppercase tracking-wider text-[10px] mb-1.5">Before you book</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {bookingIssues.map((issue) => (
+                      <li key={issue}>{issue}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
-              {/* Big booking Submit */}
-              <button
-                type="submit"
-                disabled={isSubmitting || selectedServices.length === 0}
-                className={`w-full py-4.5 rounded-xl text-center font-sans uppercase font-extrabold tracking-widest text-xs border cursor-pointer transition-all ${
-                  selectedServices.length === 0
-                    ? 'bg-pink-50 text-pink-300 border-pink-100 cursor-not-allowed'
-                    : 'bg-pink-900 hover:bg-burgundy-light text-white shadow-sm hover:shadow-md border-pink-900/10'
-                }`}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Filing Appt Record...
-                  </span>
-                ) : (
-                  'File Appointment Slot'
-                )}
-              </button>
+              {submitError && (
+                <p className="text-red-600 text-xs font-semibold text-center rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                  {submitError}
+                </p>
+              )}
+
+              <p className="text-[11px] text-pink-900/60 font-sans text-center leading-relaxed">
+                After booking, QR codes and your message appear on this page — scan or open
+                WhatsApp, then tap <strong>Send</strong> in each chat.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={handleBookingSubmit}
+                  className="py-4.5 rounded-xl text-center font-sans uppercase font-extrabold tracking-widest text-xs border cursor-pointer transition-all bg-pink-900 hover:bg-burgundy-light text-white shadow-sm hover:shadow-md border-pink-900/10 disabled:opacity-60 disabled:cursor-wait"
+                >
+                  {isSubmitting ? 'Saving...' : 'Book Online'}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={handleWhatsAppBooking}
+                  className="py-4.5 rounded-xl text-center font-sans uppercase font-extrabold tracking-widest text-xs border cursor-pointer transition-all flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white shadow-sm hover:shadow-md border-green-600/10 disabled:opacity-60 disabled:cursor-wait"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  {isSubmitting ? 'Saving...' : 'Book via WhatsApp'}
+                </button>
+              </div>
             </form>
           </div>
 

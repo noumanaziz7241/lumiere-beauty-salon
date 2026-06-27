@@ -27,13 +27,19 @@ The frontend and backend are **fully integrated** — the React app talks to the
 
 ### Public site
 - Hero, about, services catalog (search + categories), testimonials, contact section
-- Multi-service booking with date/time selection and slot availability
+- **Promotion banner**, **bridal & party packages**, **photo gallery**, **Google reviews**, **FAQ**, **gift vouchers**
+- Multi-service booking with **estimated visit duration** when multiple services selected
+- **PWA** — installable on phones (Add to Home Screen)
+- **Accessibility** — larger text and high contrast toggles
+- **Live chat** — WhatsApp widget or Tawk.to (admin-configurable)
+- **Automatic email** to salon + client on booking; confirmation email when admin confirms (Gmail SMTP)
 - WhatsApp, phone, email, map, and social links (all editable in admin)
 - Burgundy / rose / gold luxury theme
 
 ### Admin portal (`/admin`)
 - Password-protected CMS
 - Edit contact, hero, about, footer, core promises, services, reviews, hours
+- **Marketing** (promotions + Google reviews), **Packages**, **Gallery upload**, **FAQ**
 - View and manage appointments (confirm / cancel)
 - Change admin password and reset content to defaults
 

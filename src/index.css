@@ -54,6 +54,43 @@
 .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(219, 39, 119, 0.3); border-radius: 9px; }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(219, 39, 119, 0.5); }
 
+/* Accessibility modes */
+html.a11y-large-text {
+  font-size: 112.5%;
+}
+
+html.a11y-high-contrast {
+  --color-cream: #ffffff;
+  --color-cream-warm: #f5f5f5;
+  --color-burgundy-dark: #1a0510;
+  --color-burgundy: #5a1230;
+}
+
+html.a11y-high-contrast body {
+  background-color: #ffffff;
+  color: #1a0510;
+}
+
+html.a11y-high-contrast .text-burgundy\/60,
+html.a11y-high-contrast .text-burgundy\/70,
+html.a11y-high-contrast .text-burgundy\/80 {
+  color: #1a0510 !important;
+  opacity: 0.85;
+}
+
+html.a11y-high-contrast .card-shimmer {
+  background: #ffffff;
+  border: 2px solid #4a0e25;
+}
+
+html.a11y-high-contrast input,
+html.a11y-high-contrast textarea,
+html.a11y-high-contrast select {
+  border-color: #4a0e25 !important;
+  background: #ffffff !important;
+  color: #1a0510 !important;
+}
+
 body {
   background-color: var(--color-cream);
   color: var(--color-burgundy-dark);

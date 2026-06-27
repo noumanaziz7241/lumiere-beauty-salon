@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Menu, X, ShieldCheck } from 'lucide-react';
 import { useSalonConfig } from '../context/SalonConfigContext';
+import PromotionBanner from './PromotionBanner';
 
 interface NavbarProps {
   onBookClick: () => void;
@@ -21,8 +22,11 @@ export default function Navbar({ onBookClick, onSectionClick }: NavbarProps) {
   const menuItems = [
     { label: 'Home', id: 'hero' },
     { label: 'About', id: 'about' },
+    { label: 'Packages', id: 'packages' },
     { label: 'Services', id: 'services' },
-    { label: 'Reviews', id: 'testimonials' },
+    { label: 'Gallery', id: 'gallery' },
+    { label: 'FAQ', id: 'faq' },
+    { label: 'Gifts', id: 'gift-vouchers' },
     { label: 'Contact', id: 'contact' },
   ];
 
@@ -31,16 +35,17 @@ export default function Navbar({ onBookClick, onSectionClick }: NavbarProps) {
       id="salon-navbar"
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-white/90 shadow-md border-b border-rose-pale/50 py-2 backdrop-blur-md'
-          : 'bg-white/40 py-4 border-b border-white/30'
+          ? 'bg-white/90 shadow-md border-b border-rose-pale/50 backdrop-blur-md'
+          : 'bg-white/40 border-b border-white/30'
       }`}
     >
-      <div className="w-full bg-burgundy text-rose-pale text-xs text-center py-1 px-4 flex items-center justify-center gap-1.5 font-sans tracking-wide">
+      <PromotionBanner />
+      <div className={`w-full bg-burgundy text-rose-pale text-xs text-center py-1 px-4 flex items-center justify-center gap-1.5 font-sans tracking-wide ${isScrolled ? '' : ''}`}>
         <ShieldCheck className="w-3.5 h-3.5 text-rose-light" />
         <span className="font-semibold">{config.navbar.bannerText}</span>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 pb-2">
         <div className="flex items-center justify-between h-14">
           <div onClick={() => onSectionClick('hero')} className="flex items-center gap-2.5 cursor-pointer group">
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-rose to-burgundy flex items-center justify-center shadow-md">

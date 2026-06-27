@@ -1,0 +1,26 @@
+{
+  "name": "Lumière Beauty Salon",
+  "short_name": "Lumière",
+  "description": "Ladies-only beauty salon — book appointments, browse services, and gift vouchers.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fff5f0",
+  "theme_color": "#7a1f42",
+  "categories": ["beauty", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

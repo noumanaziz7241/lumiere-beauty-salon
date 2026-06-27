@@ -16,6 +16,8 @@ import {
   updateBookingStatus,
   getBookedSlotsForDate,
   createBookingId,
+  hasConfirmedBookingForPhone,
+  ADMIN_BOOKINGS_DAYS,
 } from '../db/repositories/bookingRepository.ts';
 import {
   verifyAdminPassword,
@@ -104,11 +106,12 @@ export async function resetConfig(): Promise<PublicSalonConfig> {
   return resetPublicConfig();
 }
 
-export { verifyAdminPassword, updateAdminPassword, findServiceById, getBookedSlotsForDate, createBookingId };
+export { verifyAdminPassword, updateAdminPassword, findServiceById, getBookedSlotsForDate, createBookingId, hasConfirmedBookingForPhone, ADMIN_BOOKINGS_DAYS };
 
 export async function getBookings(filters?: {
   date?: string;
   status?: string;
+  daysBack?: number;
 }): Promise<AppointmentBooking[]> {
   await initStore();
   return queryBookings(filters);

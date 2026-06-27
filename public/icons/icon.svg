@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lumière Beauty Salon">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7a1f42"/>
+      <stop offset="100%" stop-color="#e11d72"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#g)"/>
+  <text x="256" y="290" text-anchor="middle" font-family="Georgia, serif" font-size="220" font-weight="700" fill="#fff5f0">L</text>
+  <circle cx="380" cy="130" r="28" fill="#f0d4b0" opacity="0.9"/>
+</svg>

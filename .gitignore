@@ -4,8 +4,9 @@ dist/
 coverage/
 data/
 docs/.local/
+uploads/gallery/*
+!uploads/gallery/.gitkeep
 .DS_Store
 *.log
 .env*
 !.env.example
-docs/

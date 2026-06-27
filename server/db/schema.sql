@@ -114,6 +114,64 @@ CREATE TABLE IF NOT EXISTS testimonials (
   sort_order  INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS site_promotion (
+  id          INTEGER PRIMARY KEY CHECK (id = 1),
+  enabled     BOOLEAN NOT NULL DEFAULT FALSE,
+  message     TEXT    NOT NULL DEFAULT '',
+  link_url    TEXT    NOT NULL DEFAULT '',
+  link_label  TEXT    NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS site_google_reviews (
+  id              INTEGER PRIMARY KEY CHECK (id = 1),
+  enabled         BOOLEAN NOT NULL DEFAULT TRUE,
+  average_rating  NUMERIC(2,1) NOT NULL DEFAULT 5.0,
+  total_reviews   INTEGER NOT NULL DEFAULT 0,
+  reviews_url     TEXT NOT NULL DEFAULT '',
+  embed_url       TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS google_review_snippets (
+  id            TEXT PRIMARY KEY,
+  author        TEXT NOT NULL,
+  text          TEXT NOT NULL,
+  rating        INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  relative_time TEXT,
+  sort_order    INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS faq_items (
+  id          TEXT PRIMARY KEY,
+  question    TEXT NOT NULL,
+  answer      TEXT NOT NULL,
+  category    TEXT,
+  sort_order  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS gallery_images (
+  id          TEXT PRIMARY KEY,
+  title       TEXT NOT NULL,
+  category    TEXT NOT NULL,
+  image_url   TEXT NOT NULL,
+  sort_order  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS bridal_packages (
+  id            TEXT PRIMARY KEY,
+  name          TEXT NOT NULL,
+  description   TEXT NOT NULL,
+  badge         TEXT NOT NULL,
+  highlight     TEXT,
+  sort_order    INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS bridal_package_services (
+  package_id  TEXT NOT NULL REFERENCES bridal_packages(id) ON DELETE CASCADE,
+  service_id  TEXT NOT NULL,
+  sort_order  INTEGER NOT NULL,
+  PRIMARY KEY (package_id, service_id)
+);
+
 -- ─── Service catalog ───────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS service_categories (
@@ -146,6 +204,9 @@ CREATE TABLE IF NOT EXISTS bookings (
   preferred_date  TEXT        NOT NULL,
   preferred_time  TEXT        NOT NULL,
   total_price     INTEGER     NOT NULL CHECK (total_price >= 0),
+  subtotal_pkr    INTEGER     CHECK (subtotal_pkr IS NULL OR subtotal_pkr >= 0),
+  discount_percent INTEGER    NOT NULL DEFAULT 0 CHECK (discount_percent >= 0 AND discount_percent <= 100),
+  discount_pkr    INTEGER     NOT NULL DEFAULT 0 CHECK (discount_pkr >= 0),
   status          TEXT        NOT NULL DEFAULT 'pending'
                   CHECK (status IN ('pending', 'confirmed', 'cancelled')),
   notes           TEXT,
@@ -169,3 +230,63 @@ CREATE TABLE IF NOT EXISTS booking_services (
 );
 
 CREATE INDEX IF NOT EXISTS idx_booking_services_booking ON booking_services(booking_id);
+
+-- Idempotent upgrades for existing databases
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS subtotal_pkr INTEGER;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS discount_percent INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS discount_pkr INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_bookings_phone ON bookings(customer_phone);
+
+-- ─── Live chat & gift voucher config ───────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS site_chat (
+  id                INTEGER PRIMARY KEY CHECK (id = 1),
+  enabled           BOOLEAN NOT NULL DEFAULT TRUE,
+  provider          TEXT NOT NULL DEFAULT 'whatsapp'
+                    CHECK (provider IN ('whatsapp', 'tawk')),
+  whatsapp_label    TEXT NOT NULL DEFAULT 'Book on WhatsApp',
+  tawk_property_id  TEXT NOT NULL DEFAULT '',
+  tawk_widget_id    TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS site_gift_voucher_config (
+  id                INTEGER PRIMARY KEY CHECK (id = 1),
+  enabled           BOOLEAN NOT NULL DEFAULT TRUE,
+  title             TEXT NOT NULL DEFAULT 'Gift Vouchers',
+  subtitle          TEXT NOT NULL DEFAULT '',
+  validity_months   INTEGER NOT NULL DEFAULT 12 CHECK (validity_months > 0)
+);
+
+CREATE TABLE IF NOT EXISTS gift_voucher_amounts (
+  amount_pkr  INTEGER NOT NULL PRIMARY KEY CHECK (amount_pkr > 0),
+  sort_order  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS gift_voucher_terms (
+  id          SERIAL PRIMARY KEY,
+  content     TEXT NOT NULL,
+  sort_order  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS gift_vouchers (
+  id                TEXT PRIMARY KEY,
+  code              TEXT NOT NULL UNIQUE,
+  amount_pkr        INTEGER NOT NULL CHECK (amount_pkr > 0),
+  purchaser_name    TEXT NOT NULL,
+  purchaser_phone   TEXT NOT NULL,
+  purchaser_email   TEXT NOT NULL DEFAULT '',
+  recipient_name    TEXT NOT NULL,
+  recipient_email   TEXT NOT NULL DEFAULT '',
+  recipient_phone   TEXT NOT NULL DEFAULT '',
+  personal_message  TEXT,
+  status            TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'active', 'redeemed', 'expired', 'cancelled')),
+  expires_at        TIMESTAMPTZ NOT NULL,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  redeemed_at       TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_gift_vouchers_code   ON gift_vouchers(code);
+CREATE INDEX IF NOT EXISTS idx_gift_vouchers_status ON gift_vouchers(status);
+CREATE INDEX IF NOT EXISTS idx_gift_vouchers_created ON gift_vouchers(created_at);

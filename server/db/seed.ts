@@ -106,6 +106,104 @@ export async function seedFromConfig(config: PublicSalonConfig) {
       );
     }
 
+    await client.query(
+      `INSERT INTO site_promotion (id, enabled, message, link_url, link_label) VALUES (1, $1, $2, $3, $4)`,
+      [
+        config.promotion.enabled,
+        config.promotion.message,
+        config.promotion.linkUrl ?? '',
+        config.promotion.linkLabel ?? '',
+      ],
+    );
+
+    await client.query(
+      `INSERT INTO site_google_reviews (id, enabled, average_rating, total_reviews, reviews_url, embed_url)
+       VALUES (1, $1, $2, $3, $4, $5)`,
+      [
+        config.googleReviews.enabled,
+        config.googleReviews.averageRating,
+        config.googleReviews.totalReviews,
+        config.googleReviews.reviewsUrl,
+        config.googleReviews.embedUrl ?? '',
+      ],
+    );
+
+    for (let i = 0; i < config.googleReviews.snippets.length; i++) {
+      const s = config.googleReviews.snippets[i];
+      await client.query(
+        `INSERT INTO google_review_snippets (id, author, text, rating, relative_time, sort_order)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [s.id, s.author, s.text, s.rating, s.relativeTime ?? null, i],
+      );
+    }
+
+    for (let i = 0; i < config.faq.length; i++) {
+      const item = config.faq[i];
+      await client.query(
+        `INSERT INTO faq_items (id, question, answer, category, sort_order) VALUES ($1, $2, $3, $4, $5)`,
+        [item.id, item.question, item.answer, item.category ?? null, i],
+      );
+    }
+
+    for (let i = 0; i < config.gallery.length; i++) {
+      const img = config.gallery[i];
+      await client.query(
+        `INSERT INTO gallery_images (id, title, category, image_url, sort_order) VALUES ($1, $2, $3, $4, $5)`,
+        [img.id, img.title, img.category, img.imageUrl, i],
+      );
+    }
+
+    for (let i = 0; i < config.packages.length; i++) {
+      const pkg = config.packages[i];
+      await client.query(
+        `INSERT INTO bridal_packages (id, name, description, badge, highlight, sort_order) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [pkg.id, pkg.name, pkg.description, pkg.badge, pkg.highlight ?? null, i],
+      );
+      for (let j = 0; j < pkg.serviceIds.length; j++) {
+        await client.query(
+          `INSERT INTO bridal_package_services (package_id, service_id, sort_order) VALUES ($1, $2, $3)`,
+          [pkg.id, pkg.serviceIds[j], j],
+        );
+      }
+    }
+
+    await client.query(
+      `INSERT INTO site_chat (id, enabled, provider, whatsapp_label, tawk_property_id, tawk_widget_id)
+       VALUES (1, $1, $2, $3, $4, $5)`,
+      [
+        config.chat.enabled,
+        config.chat.provider,
+        config.chat.whatsappLabel,
+        config.chat.tawkPropertyId,
+        config.chat.tawkWidgetId,
+      ],
+    );
+
+    await client.query(
+      `INSERT INTO site_gift_voucher_config (id, enabled, title, subtitle, validity_months)
+       VALUES (1, $1, $2, $3, $4)`,
+      [
+        config.giftVouchers.enabled,
+        config.giftVouchers.title,
+        config.giftVouchers.subtitle,
+        config.giftVouchers.validityMonths,
+      ],
+    );
+
+    for (let i = 0; i < config.giftVouchers.amountsPKR.length; i++) {
+      await client.query(
+        `INSERT INTO gift_voucher_amounts (amount_pkr, sort_order) VALUES ($1, $2)`,
+        [config.giftVouchers.amountsPKR[i], i],
+      );
+    }
+
+    for (let i = 0; i < config.giftVouchers.terms.length; i++) {
+      await client.query(
+        `INSERT INTO gift_voucher_terms (content, sort_order) VALUES ($1, $2)`,
+        [config.giftVouchers.terms[i], i],
+      );
+    }
+
     for (let catIdx = 0; catIdx < config.services.length; catIdx++) {
       const cat = config.services[catIdx];
       await client.query(
@@ -140,6 +238,17 @@ export async function seedDefaultConfig() {
 
 async function clearConfigTables(client: pg.PoolClient) {
   await client.query(`
+    DELETE FROM gift_voucher_terms;
+    DELETE FROM gift_voucher_amounts;
+    DELETE FROM site_gift_voucher_config;
+    DELETE FROM site_chat;
+    DELETE FROM bridal_package_services;
+    DELETE FROM bridal_packages;
+    DELETE FROM gallery_images;
+    DELETE FROM faq_items;
+    DELETE FROM google_review_snippets;
+    DELETE FROM site_google_reviews;
+    DELETE FROM site_promotion;
     DELETE FROM services;
     DELETE FROM service_categories;
     DELETE FROM testimonials;
