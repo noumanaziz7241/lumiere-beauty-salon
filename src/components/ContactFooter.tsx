@@ -1,92 +1,107 @@
 import React from 'react';
-import { Clock, ShieldCheck, Heart, Sparkles, ChevronUp } from 'lucide-react';
+import { Clock, ShieldCheck, Heart, Sparkles, ChevronUp, MessageCircle } from 'lucide-react';
+import { useSalonConfig } from '../context/SalonConfigContext';
+import { buildInquiryMessage, buildWhatsAppUrl } from '../lib/whatsapp';
 
 interface ContactFooterProps {
   onBackToTop: () => void;
 }
 
 export default function ContactFooter({ onBackToTop }: ContactFooterProps) {
+  const { config } = useSalonConfig();
+  const { contact, footer, businessHours, hoursNote } = config;
   const currentYear = new Date().getFullYear();
+  const whatsappLink = buildWhatsAppUrl(contact.whatsapp, buildInquiryMessage());
 
   return (
-    <footer id="hours" className="bg-[#501d2c] border-t border-[#3d1320] text-pink-100 relative">
-      
-      {/* Scroll back to top element */}
+    <footer id="hours" className="bg-burgundy border-t border-burgundy-dark text-rose-pale relative">
       <button
         onClick={onBackToTop}
-        className="absolute top-[-24px] left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-white hover:bg-pink-50 border border-pink-100/50 text-pink-900 flex items-center justify-center transition-all cursor-pointer shadow-md"
+        className="absolute top-[-24px] left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-white hover:bg-rose-pale border border-rose-pale text-burgundy flex items-center justify-center transition-all cursor-pointer shadow-md"
         title="Scroll back to top"
       >
         <ChevronUp className="w-5 h-5 animate-bounce" />
       </button>
 
-      {/* Top Footer Banner */}
-      <div className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-[#3d1320]">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          
-          {/* Column 1: Editorial Branding */}
+      <div className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-burgundy-dark">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="space-y-5">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-pink-500 to-pink-700 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-rose to-gold flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <span className="font-serif text-lg font-black tracking-widest text-[#fdf8f6]">
+              <span className="font-serif text-lg font-black tracking-widest text-cream">
                 LUMIÈRE BEAUTY SALON
               </span>
             </div>
-            <p className="font-sans text-xs text-pink-200/80 leading-relaxed max-w-xs font-semibold">
-              A private, premium, and fully hygienic **Ladies Only** beauty sanctuary. We design custom cuts, HD makeup, and restorative facials tailored to make your natural radiance shine.
+            <p className="font-sans text-xs text-rose-pale/80 leading-relaxed max-w-xs font-semibold">
+              {footer.description}
             </p>
-            <div className="pt-2 text-[11px] font-sans text-white font-bold uppercase tracking-widest flex items-center gap-1.5 bg-pink-955/35 border border-pink-500/10 px-3 py-1.5 rounded-xl w-fit">
-              <ShieldCheck className="w-4 h-4 text-pink-300" />
+            <div className="pt-2 text-[11px] font-sans text-white font-bold uppercase tracking-widest flex items-center gap-1.5 bg-white/10 border border-rose/20 px-3 py-1.5 rounded-xl w-fit">
+              <ShieldCheck className="w-4 h-4 text-rose-light" />
               <span>Strictly Ladies Only Venue</span>
             </div>
           </div>
 
-          {/* Column 2: Hours & Schedule */}
           <div className="space-y-4">
-            <h4 className="font-serif text-xs font-bold text-pink-200 uppercase tracking-widest">Business hours</h4>
-            <div className="w-10 h-0.5 bg-pink-400/40" />
-            
-            <div className="space-y-3 font-sans text-xs text-pink-200/80">
-              <div className="flex items-start gap-2.5">
-                <Clock className="w-4 h-4 text-pink-300 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <div className="flex justify-between w-64">
-                    <span className="font-semibold text-[#fdf8f6]">Tuesday – Sunday:</span>
-                    <span>10:30 AM – 08:30 PM</span>
-                  </div>
-                  <div className="flex justify-between w-64 text-pink-300/70">
-                    <span>Mondays:</span>
-                    <span className="uppercase text-[10px] font-bold text-pink-300">Closed for Sanitization</span>
+            <h4 className="font-serif text-xs font-bold text-rose-light uppercase tracking-widest">Business hours</h4>
+            <div className="w-10 h-0.5 bg-rose/40" />
+            <div className="space-y-3 font-sans text-xs text-rose-pale/80">
+              {businessHours.map((h, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <Clock className="w-4 h-4 text-rose-light shrink-0 mt-0.5" />
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className={`font-semibold ${h.closed ? 'text-rose-light/70' : 'text-cream'}`}>{h.days}:</span>
+                    <span className={h.closed ? 'uppercase text-[10px] font-bold text-rose-light' : ''}>{h.hours}</span>
                   </div>
                 </div>
-              </div>
-              <p className="text-[10px] text-pink-300/50 leading-relaxed italic pl-6.5 max-w-xs">
-                *Booking in advance guarantees that our stylist has a fully dedicated time block designated for your service.
+              ))}
+              <p className="text-[10px] text-rose-light/50 leading-relaxed italic pl-6 max-w-xs">
+                *{hoursNote}
               </p>
             </div>
           </div>
 
+          <div className="space-y-4">
+            <h4 className="font-serif text-xs font-bold text-rose-light uppercase tracking-widest">Quick Contact</h4>
+            <div className="w-10 h-0.5 bg-rose/40" />
+            <div className="space-y-2 font-sans text-xs">
+              <a href={`tel:${contact.phone.replace(/\s/g, '')}`} className="block text-rose-pale/80 hover:text-white transition-colors">
+                {contact.phone}
+              </a>
+              <a href={`mailto:${contact.email}`} className="block text-rose-pale/80 hover:text-white transition-colors">
+                {contact.email}
+              </a>
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold uppercase tracking-wider transition-colors"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                WhatsApp Us
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Slogan & Copyright Bottom section */}
-      <div className="bg-[#3d1320] py-10 text-center space-y-4 px-4 border-t border-[#2e0915]">
-        <p className="font-serif text-lg italic text-[#fdf8f6] flex items-center justify-center gap-1.5">
-          "Look Beautiful, Feel Beautiful."
+      <div className="bg-burgundy-dark py-10 text-center space-y-4 px-4 border-t border-burgundy-deep">
+        <p className="font-serif text-lg italic text-cream flex items-center justify-center gap-1.5">
+          "{footer.slogan}"
         </p>
-        <p className="font-sans text-xs uppercase tracking-[0.25em] text-pink-200 font-extrabold flex items-center justify-center gap-1">
-          <Heart className="w-3.5 h-3.5 fill-pink-500 stroke-pink-500 animate-pulse" />
-          BE BEAUTIFUL, BE YOU!
-          <Heart className="w-3.5 h-3.5 fill-pink-500 stroke-pink-500 animate-pulse" />
+        <p className="font-sans text-xs uppercase tracking-[0.25em] text-rose-pale font-extrabold flex items-center justify-center gap-1">
+          <Heart className="w-3.5 h-3.5 fill-rose stroke-rose animate-pulse" />
+          {footer.tagline}
+          <Heart className="w-3.5 h-3.5 fill-rose stroke-rose animate-pulse" />
         </p>
-
-        <div className="text-[10px] text-pink-300/40 font-semibold font-sans pt-4 max-w-sm mx-auto border-t border-pink-500/10 space-y-1">
+        <div className="text-[10px] text-rose-light/40 font-semibold font-sans pt-4 max-w-sm mx-auto border-t border-rose/10 space-y-1">
           <p>© {currentYear} Lumière Beauty Salon. All rights reserved.</p>
+          <p>
+            <a href="/admin" className="hover:text-rose-light/70 transition-colors">Admin Portal</a>
+          </p>
         </div>
       </div>
-
     </footer>
   );
 }

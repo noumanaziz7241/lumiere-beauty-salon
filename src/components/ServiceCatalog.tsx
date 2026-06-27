@@ -12,7 +12,9 @@ import {
   ShoppingBag,
   HelpCircle,
 } from 'lucide-react';
-import { SALON_SERVICES, Service, ServiceCategory, ServiceSubcategory } from '../types';
+import { Service, ServiceCategory, ServiceSubcategory } from '../types';
+import { useSalonConfig } from '../context/SalonConfigContext';
+import VisitDurationSummary from './VisitDurationSummary';
 
 interface ServiceCatalogProps {
   selectedServices: Service[];
@@ -25,6 +27,8 @@ export default function ServiceCatalog({
   onToggleService,
   onContinueToBooking,
 }: ServiceCatalogProps) {
+  const { config } = useSalonConfig();
+  const SALON_SERVICES = config.services;
   const [activeCategory, setActiveCategory] = useState<ServiceSubcategory>('Hair');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -77,7 +81,7 @@ export default function ServiceCatalog({
   };
 
   return (
-    <section id="services" className="py-20 bg-gradient-to-b from-white via-[#fdf8f6] to-white border-b border-pink-100/30">
+    <section id="services" className="py-20 bg-gradient-to-b from-white via-cream to-cream-warm border-b border-rose-pale/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Title Grid */}
@@ -87,7 +91,7 @@ export default function ServiceCatalog({
             <h2 className="font-serif text-3xl sm:text-5xl font-black text-pink-900 leading-tight">
               Aesthetic Therapies
             </h2>
-            <p className="font-sans text-pink-955/70 text-sm mt-3 font-medium">
+            <p className="font-sans text-burgundy/70 text-sm mt-3 font-medium">
               Explore our curated selection. Pick multiple treatments to compose your custom look, then book your appointment seamlessly.
             </p>
           </div>
@@ -146,7 +150,7 @@ export default function ServiceCatalog({
                           <h4 className="font-serif text-base font-bold text-pink-900">{service.name}</h4>
                         </div>
                         {service.description && (
-                          <p className="font-sans text-xs text-pink-955/70 leading-relaxed max-w-sm">
+                          <p className="font-sans text-xs text-burgundy/70 leading-relaxed max-w-sm">
                             {service.description}
                           </p>
                         )}
@@ -167,7 +171,7 @@ export default function ServiceCatalog({
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all ${
                             selected
                               ? 'bg-pink-100 text-pink-700 border-pink-200 hover:bg-pink-200/50'
-                              : 'bg-pink-900 text-white border-pink-900/10 hover:bg-pink-850'
+                              : 'bg-pink-900 text-white border-pink-900/10 hover:bg-burgundy-light'
                           }`}
                         >
                           {selected ? (
@@ -238,7 +242,7 @@ export default function ServiceCatalog({
                     <div className="space-y-1.5">
                       <h4 className="font-serif text-base sm:text-lg font-extrabold text-pink-900">{service.name}</h4>
                       {service.description && (
-                        <p className="font-sans text-xs text-pink-955/70 leading-relaxed max-w-sm">
+                        <p className="font-sans text-xs text-burgundy/70 leading-relaxed max-w-sm">
                           {service.description}
                         </p>
                       )}
@@ -259,7 +263,7 @@ export default function ServiceCatalog({
                         className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all ${
                           selected
                             ? 'bg-pink-100 text-pink-700 border-pink-200 hover:bg-pink-200/50'
-                            : 'bg-pink-900 text-white border-pink-900/10 hover:bg-pink-850'
+                            : 'bg-pink-900 text-white border-pink-900/10 hover:bg-burgundy-light'
                         }`}
                       >
                         {selected ? (
@@ -286,8 +290,8 @@ export default function ServiceCatalog({
                 <HelpCircle className="w-5 h-5 text-pink-600 shrink-0 mt-0.5" />
                 <div>
                   <h5 className="font-serif text-pink-900 text-sm font-extrabold">Waxing Services Policy Message</h5>
-                  <p className="font-sans text-xs text-pink-955/70 mt-1 leading-relaxed">
-                    We offer high-grade, hygienic strip and face waxing designed for sensitive and delicate female skin. Please note that **we strictly do not provide Bikini Wax or Chocolate Wax** services. Safe alternative wax treatments are available above.
+                  <p className="font-sans text-xs text-burgundy/70 mt-1 leading-relaxed">
+                    We offer high-grade, hygienic strip and face waxing designed for sensitive and delicate female skin. Please note that <strong>we strictly do not provide Bikini Wax or Chocolate Wax</strong> services. Safe alternative wax treatments are available above.
                   </p>
                 </div>
               </div>
@@ -297,23 +301,24 @@ export default function ServiceCatalog({
 
         {/* Floating summary bar when items are in queue */}
         {selectedServices.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg z-40 bg-white/90 border border-pink-200 p-4 rounded-2xl shadow-xl backdrop-blur-xl flex items-center justify-between gap-4 animate-slideUp">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-500 to-pink-700 flex items-center justify-center">
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg z-40 bg-white/90 border border-pink-200 p-4 rounded-2xl shadow-xl backdrop-blur-xl flex items-center justify-between gap-4 animate-slideUp">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-500 to-pink-700 flex items-center justify-center shrink-0">
                 <ShoppingBag className="w-4.5 h-4.5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-sans text-pink-900 uppercase tracking-widest font-bold">
                   {selectedServices.length} {selectedServices.length === 1 ? 'Service' : 'Services'} Chosen
                 </p>
                 <p className="text-[11px] font-sans text-pink-700 font-extrabold">
                   Est. Total: {formatPKR(selectedServices.reduce((sum, item) => sum + item.pricePKR, 0))}
                 </p>
+                <VisitDurationSummary services={selectedServices} variant="compact" className="text-pink-800 mt-0.5" />
               </div>
             </div>
             <button
               onClick={onContinueToBooking}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest bg-pink-900 hover:bg-pink-850 text-white shadow border border-pink-700/15 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest bg-pink-900 hover:bg-burgundy-light text-white shadow border border-pink-700/15 cursor-pointer"
             >
               Confirm Now
             </button>

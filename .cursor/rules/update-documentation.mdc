@@ -1,0 +1,52 @@
+---
+description: Keep docs/ technical documentation in sync when features, APIs, or schema change
+alwaysApply: true
+---
+
+# Documentation maintenance (required)
+
+This project maintains technical docs in **`docs/`**. You MUST update them whenever this session adds or changes features, APIs, database schema, env vars, deployment, or architecture.
+
+## When to update
+
+Update docs if you change any of:
+
+- Frontend routes, components, state, or API client
+- Backend routes, auth, store, repositories, or schema
+- Database tables, columns, or seed behavior
+- Admin portal tabs or capabilities
+- Environment variables or npm scripts
+- Deployment or Docker setup
+
+## What to update
+
+| Change type | Update these files |
+|-------------|-------------------|
+| New/changed API endpoint | `docs/BACKEND-API.md`, `docs/CHANGELOG.md` |
+| Frontend component or flow | `docs/FRONTEND.md`, `docs/CHANGELOG.md` |
+| DB schema or tables | `docs/DATABASE.md`, `server/db/schema.sql`, `docs/CHANGELOG.md` |
+| Admin features | `docs/ADMIN-PORTAL.md`, `docs/CHANGELOG.md` |
+| Architecture / env / deploy | `docs/ARCHITECTURE.md` or `docs/DEPLOYMENT.md`, `docs/CHANGELOG.md` |
+| Any feature | `docs/CHANGELOG.md` (always append dated entry) |
+
+## Changelog format
+
+Append to `docs/CHANGELOG.md`:
+
+```markdown
+## YYYY-MM-DD
+
+### Short feature title
+- Bullet summary of change
+- Docs updated: BACKEND-API.md, DATABASE.md
+```
+
+## Index
+
+Keep `docs/README.md` index accurate if new doc files are added.
+
+## Do not
+
+- Skip doc updates because the change seems small
+- Put technical architecture only in README.md — use `docs/` for detail
+- Delete or gitignore the `docs/` folder (docs are version-controlled)
