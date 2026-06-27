@@ -7,16 +7,21 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useSalonConfig();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(password)) {
+    setIsLoading(true);
+    setError('');
+    const success = await login(password);
+    if (success) {
       navigate('/admin/dashboard');
     } else {
       setError('Incorrect password. Please try again.');
     }
+    setIsLoading(false);
   };
 
   return (
@@ -64,9 +69,10 @@ export default function AdminLogin() {
 
             <button
               type="submit"
-              className="w-full py-3.5 rounded-xl font-sans text-xs uppercase font-extrabold tracking-widest bg-burgundy hover:bg-burgundy-light text-white shadow-md transition-all hover:-translate-y-0.5 cursor-pointer"
+              disabled={isLoading}
+              className="w-full py-3.5 rounded-xl font-sans text-xs uppercase font-extrabold tracking-widest bg-burgundy hover:bg-burgundy-light text-white shadow-md transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-60"
             >
-              Sign In
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 

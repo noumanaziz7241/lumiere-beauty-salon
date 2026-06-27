@@ -32,7 +32,7 @@ export interface AppointmentBooking {
   preferredTime: string;
   selectedServices: Service[];
   totalPrice: number;
-  status: 'pending' | 'confirmed';
+  status: 'pending' | 'confirmed' | 'cancelled';
   notes?: string;
 }
 

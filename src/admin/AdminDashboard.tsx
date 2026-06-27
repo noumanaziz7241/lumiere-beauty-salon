@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, LogOut, Settings, Phone, FileText, Scissors,
-  Star, Clock, Save, RotateCcw, Plus, Trash2, Home,
+  Star, Clock, Save, RotateCcw, Plus, Trash2, Home, CalendarCheck,
 } from 'lucide-react';
 import { useSalonConfig } from '../context/SalonConfigContext';
-import { SalonConfig, Testimonial, CorePromise, BusinessHours } from '../config/defaults';
-import { ServiceCategory, Service } from '../types';
+import { SalonConfig, Testimonial, BusinessHours } from '../config/defaults';
+import { ServiceCategory, Service, AppointmentBooking } from '../types';
+import { api } from '../api/client';
 
-type Tab = 'contact' | 'content' | 'services' | 'testimonials' | 'hours' | 'settings';
+type Tab = 'contact' | 'content' | 'services' | 'testimonials' | 'hours' | 'bookings' | 'settings';
 
 export default function AdminDashboard() {
   const { config, updateConfig, resetConfig, isAdmin, logout } = useSalonConfig();
@@ -16,6 +17,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('contact');
   const [draft, setDraft] = useState<SalonConfig>(config);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   React.useEffect(() => {
     if (!isAdmin) navigate('/admin');
@@ -25,14 +27,19 @@ export default function AdminDashboard() {
     setDraft(config);
   }, [config]);
 
-  const handleSave = () => {
-    updateConfig(draft);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const handleSave = async () => {
+    setSaveError('');
+    try {
+      await updateConfig(draft);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save');
+    }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/admin');
   };
 
@@ -42,6 +49,7 @@ export default function AdminDashboard() {
     { id: 'services', label: 'Services', icon: Scissors },
     { id: 'testimonials', label: 'Reviews', icon: Star },
     { id: 'hours', label: 'Hours', icon: Clock },
+    { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -68,6 +76,9 @@ export default function AdminDashboard() {
             <a href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-pale hover:bg-white/10 transition-colors">
               <Home className="w-3.5 h-3.5" /> View Site
             </a>
+            {saveError && (
+              <span className="text-[10px] text-red-300 font-semibold hidden sm:inline">{saveError}</span>
+            )}
             <button
               onClick={handleSave}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-rose hover:bg-rose-light text-white transition-all cursor-pointer"
@@ -127,8 +138,11 @@ export default function AdminDashboard() {
             {activeTab === 'hours' && (
               <HoursPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} />
             )}
+            {activeTab === 'bookings' && (
+              <BookingsPanel labelClass={labelClass} inputClass={inputClass} />
+            )}
             {activeTab === 'settings' && (
-              <SettingsPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} resetConfig={resetConfig} />
+              <SettingsPanel resetConfig={resetConfig} inputClass={inputClass} labelClass={labelClass} />
             )}
           </div>
         </div>
@@ -488,27 +502,50 @@ function HoursPanel({ draft, setDraft, inputClass, labelClass }: PanelProps) {
   );
 }
 
-function SettingsPanel({ draft, setDraft, inputClass, labelClass, resetConfig }: PanelProps & { resetConfig: () => void }) {
+function SettingsPanel({ resetConfig, inputClass, labelClass }: { resetConfig: () => Promise<void>; inputClass: string; labelClass: string }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState('');
+
+  const handlePasswordChange = async () => {
+    setPasswordMsg('');
+    try {
+      await api.changePassword(currentPassword, newPassword);
+      setPasswordMsg('Password updated successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err) {
+      setPasswordMsg(err instanceof Error ? err.message : 'Failed to update password');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="font-serif text-xl font-black text-burgundy">Admin Settings</h2>
-      <div>
-        <label className={labelClass}>Admin Password</label>
-        <input
-          className={inputClass}
-          type="password"
-          value={draft.adminPassword}
-          onChange={(e) => setDraft({ ...draft, adminPassword: e.target.value })}
-        />
-        <p className="font-sans text-[10px] text-burgundy/50 mt-1">This password is used to access the admin portal.</p>
+      <div className="space-y-3">
+        <div>
+          <label className={labelClass}>Current Password</label>
+          <input className={inputClass} type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelClass}>New Password (min 6 characters)</label>
+          <input className={inputClass} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+        </div>
+        <button
+          onClick={handlePasswordChange}
+          className="px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-burgundy text-white hover:bg-burgundy-light transition-colors cursor-pointer"
+        >
+          Update Password
+        </button>
+        {passwordMsg && <p className="text-xs font-semibold text-burgundy/70">{passwordMsg}</p>}
       </div>
       <div className="pt-6 border-t border-rose-pale">
         <h3 className="font-serif text-lg font-bold text-burgundy mb-2">Danger Zone</h3>
         <p className="font-sans text-xs text-burgundy/60 mb-3">Reset all content back to factory defaults. This cannot be undone.</p>
         <button
-          onClick={() => {
+          onClick={async () => {
             if (confirm('Reset all salon content to defaults? This cannot be undone.')) {
-              resetConfig();
+              await resetConfig();
             }
           }}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer"
@@ -516,6 +553,96 @@ function SettingsPanel({ draft, setDraft, inputClass, labelClass, resetConfig }:
           <RotateCcw className="w-4 h-4" /> Reset to Defaults
         </button>
       </div>
+    </div>
+  );
+}
+
+function BookingsPanel({ labelClass, inputClass }: { labelClass: string; inputClass: string }) {
+  const [bookings, setBookings] = useState<AppointmentBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('');
+
+  const loadBookings = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.getBookings(filterStatus ? { status: filterStatus } : undefined);
+      setBookings(data.bookings);
+    } catch {
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filterStatus]);
+
+  React.useEffect(() => { loadBookings(); }, [loadBookings]);
+
+  const updateStatus = async (id: string, status: AppointmentBooking['status']) => {
+    await api.updateBookingStatus(id, status);
+    loadBookings();
+  };
+
+  const formatPKR = (n: number) =>
+    new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(n);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-xl font-black text-burgundy">Appointments</h2>
+        <select
+          className={inputClass + ' w-auto text-xs'}
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-burgundy/50">Loading bookings...</p>
+      ) : bookings.length === 0 ? (
+        <p className="text-sm text-burgundy/50">No bookings found.</p>
+      ) : (
+        <div className="space-y-3">
+          {bookings.map((b) => (
+            <div key={b.id} className="p-4 rounded-xl border border-rose-pale/50 bg-cream/30 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-serif font-bold text-burgundy">{b.customerName}</p>
+                  <p className="font-mono text-xs text-burgundy/60">{b.id}</p>
+                </div>
+                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                  b.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                  b.status === 'cancelled' ? 'bg-gray-100 text-gray-500' :
+                  'bg-amber-100 text-amber-700'
+                }`}>{b.status}</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-burgundy/70">
+                <span>{b.preferredDate}</span>
+                <span>{b.preferredTime}</span>
+                <span>{b.customerPhone}</span>
+                <span className="font-bold">{formatPKR(b.totalPrice)}</span>
+              </div>
+              <p className="text-[10px] text-burgundy/50">
+                {b.selectedServices.map((s) => s.name).join(', ')}
+              </p>
+              <div className="flex gap-2 pt-1">
+                {b.status === 'pending' && (
+                  <>
+                    <button onClick={() => updateStatus(b.id, 'confirmed')} className="px-3 py-1 rounded-lg text-[10px] font-bold bg-green-600 text-white cursor-pointer">Confirm</button>
+                    <button onClick={() => updateStatus(b.id, 'cancelled')} className="px-3 py-1 rounded-lg text-[10px] font-bold bg-gray-200 text-gray-700 cursor-pointer">Cancel</button>
+                  </>
+                )}
+                {b.status === 'confirmed' && (
+                  <button onClick={() => updateStatus(b.id, 'cancelled')} className="px-3 py-1 rounded-lg text-[10px] font-bold bg-gray-200 text-gray-700 cursor-pointer">Cancel</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

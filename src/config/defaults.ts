@@ -179,5 +179,4 @@ export const DEFAULT_SALON_CONFIG: SalonConfig = {
   adminPassword: 'lumiere2024',
 };
 
-export const STORAGE_KEY = 'lumiere-salon-config';
-export const ADMIN_SESSION_KEY = 'lumiere-admin-session';
+export type PublicSalonConfig = Omit<SalonConfig, 'adminPassword'>;

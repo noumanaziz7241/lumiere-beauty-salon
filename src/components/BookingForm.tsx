@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Phone, Mail, FileText, Ticket, Trash2, Scissors } from 'lucide-react';
 import { Service, AppointmentBooking } from '../types';
 import { useSalonConfig } from '../context/SalonConfigContext';
+import { api } from '../api/client';
 
 interface BookingFormProps {
   selectedServices: Service[];
@@ -27,7 +28,24 @@ export default function BookingForm({
   const [preferredTime, setPreferredTime] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [confirmedBooking, setConfirmedBooking] = useState<AppointmentBooking | null>(null);
+
+  useEffect(() => {
+    if (!preferredDate) {
+      setBookedSlots([]);
+      return;
+    }
+    api.getAvailability(preferredDate)
+      .then((data) => {
+        setBookedSlots(data.bookedSlots);
+        if (preferredTime && data.bookedSlots.includes(preferredTime)) {
+          setPreferredTime('');
+        }
+      })
+      .catch(() => setBookedSlots([]));
+  }, [preferredDate, preferredTime]);
 
   const totalAmount = selectedServices.reduce((sum, item) => sum + item.pricePKR, 0);
 
@@ -40,7 +58,7 @@ export default function BookingForm({
     }).format(amount);
   };
 
-  const handleBookingSubmit = (e: React.FormEvent) => {
+  const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerPhone || !preferredDate || !preferredTime) {
       alert('Please fill out all required fields: Name, Phone, Date, and Time.');
@@ -52,27 +70,25 @@ export default function BookingForm({
     }
 
     setIsSubmitting(true);
+    setSubmitError('');
 
-    // Simulate reliable API/Server delay
-    setTimeout(() => {
-      const referenceId = 'LM-' + Math.floor(100000 + Math.random() * 900000);
-      const newBooking: AppointmentBooking = {
-        id: referenceId,
+    try {
+      const newBooking = await api.createBooking({
         customerName,
         customerPhone,
         customerEmail,
         preferredDate,
         preferredTime,
-        selectedServices: [...selectedServices],
-        totalPrice: totalAmount,
-        status: 'confirmed',
+        serviceIds: selectedServices.map((s) => s.id),
         notes,
-      };
-
+      });
       setConfirmedBooking(newBooking);
-      setIsSubmitting(false);
       onBookingSuccess();
-    }, 1500);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create booking');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -94,8 +110,8 @@ export default function BookingForm({
           
           {/* Ticket Header Graphic Accent */}
           <div className="bg-[#501d2c] p-6 text-center relative">
-            <div className="absolute top-4 right-4 text-pink-900 bg-pink-100 text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full">
-              Confirmed
+            <div className="absolute top-4 right-4 text-burgundy bg-rose-pale text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full">
+              {confirmedBooking.status === 'pending' ? 'Pending' : 'Confirmed'}
             </div>
             <Ticket className="w-10 h-10 text-pink-200 mx-auto mb-2 animate-bounce" />
             <h3 className="font-serif text-2xl font-black text-white leading-tight uppercase">Lumière Appointment</h3>
@@ -373,15 +389,19 @@ export default function BookingForm({
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                   {timeSlots.map((slot) => {
                     const isSelected = preferredTime === slot;
+                    const isBooked = bookedSlots.includes(slot);
                     return (
                       <button
                         key={slot}
                         type="button"
+                        disabled={isBooked}
                         onClick={() => setPreferredTime(slot)}
-                        className={`py-3 px-2 rounded-xl text-xs font-bold font-sans tracking-wide border cursor-pointer text-center transition-all ${
-                          isSelected
-                            ? 'bg-pink-900 border-pink-900 text-white shadow-sm'
-                            : 'bg-white/60 border-pink-100 text-pink-900 hover:border-pink-300'
+                        className={`py-3 px-2 rounded-xl text-xs font-bold font-sans tracking-wide border text-center transition-all ${
+                          isBooked
+                            ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed line-through'
+                            : isSelected
+                              ? 'bg-pink-900 border-pink-900 text-white shadow-sm cursor-pointer'
+                              : 'bg-white/60 border-pink-100 text-pink-900 hover:border-pink-300 cursor-pointer'
                         }`}
                       >
                         {slot}
@@ -406,6 +426,10 @@ export default function BookingForm({
                   className="w-full bg-white/70 text-pink-900 placeholder-pink-200 py-3.5 px-4 rounded-xl border border-pink-100 focus:border-pink-500 outline-none font-sans text-sm transition-all focus:ring-0 shadow-sm resize-none"
                 />
               </div>
+
+              {submitError && (
+                <p className="text-red-500 text-xs font-semibold text-center">{submitError}</p>
+              )}
 
               {/* Big booking Submit */}
               <button
