@@ -2,6 +2,13 @@
 
 ## 2026-06-27
 
+### Production deploy — Vercel fix & Railway support
+- Added `VITE_API_URL` for split deploy (Vercel frontend + Railway/Render API)
+- Production connection error no longer shows local `npm run db:up` hints
+- `COOKIE_SAME_SITE=none` for cross-origin admin sessions on split deploy
+- Added `vercel.json`, `railway.toml`, and expanded `docs/DEPLOYMENT.md` (URL change, full-stack Railway)
+- Docs updated: DEPLOYMENT.md, CHANGELOG.md
+
 ### Gallery — user composites & admin upload fix
 - Replaced `ba-makeup.jpg` and `ba-hair.jpg` with user-provided before/after composites
 - Fixed gallery startup migration resetting admin add/remove edits on server restart (one-time `gallery_defaults_v2` migration)

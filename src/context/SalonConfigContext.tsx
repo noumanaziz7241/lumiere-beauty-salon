@@ -102,14 +102,21 @@ export function SalonConfigProvider({ children }: { children: React.ReactNode })
         <div className="text-center max-w-md space-y-4">
           <p className="font-serif text-xl font-bold text-burgundy">Unable to connect</p>
           <p className="font-sans text-sm text-burgundy/60">{error}</p>
-          <div className="font-sans text-xs text-burgundy/50 text-left bg-rose-pale/30 rounded-xl p-4 space-y-2">
-            <p className="font-bold text-burgundy/70">Quick fix (run in project folder):</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li><code className="bg-white/60 px-1 rounded">npm run db:up</code> — start PostgreSQL</li>
-              <li><code className="bg-white/60 px-1 rounded">npm run dev</code> — start frontend + API</li>
-            </ol>
-            <p className="text-[10px] text-burgundy/40 pt-1">Stop the current terminal (Ctrl+C) first, then run the commands above.</p>
-          </div>
+          {!import.meta.env.PROD && (
+            <div className="font-sans text-xs text-burgundy/50 text-left bg-rose-pale/30 rounded-xl p-4 space-y-2">
+              <p className="font-bold text-burgundy/70">Quick fix (run in project folder):</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li><code className="bg-white/60 px-1 rounded">npm run db:up</code> — start PostgreSQL</li>
+                <li><code className="bg-white/60 px-1 rounded">npm run dev</code> — start frontend + API</li>
+              </ol>
+              <p className="text-[10px] text-burgundy/40 pt-1">Stop the current terminal (Ctrl+C) first, then run the commands above.</p>
+            </div>
+          )}
+          {import.meta.env.PROD && (
+            <p className="font-sans text-xs text-burgundy/50">
+              See <code className="bg-white/60 px-1 rounded">docs/DEPLOYMENT.md</code> for production setup (Railway/Render + PostgreSQL).
+            </p>
+          )}
           <button
             onClick={() => { setLoading(true); refreshConfig().finally(() => setLoading(false)); }}
             className="px-6 py-2.5 rounded-xl bg-burgundy text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
