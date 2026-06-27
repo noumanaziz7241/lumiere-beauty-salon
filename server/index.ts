@@ -13,8 +13,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3001;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
 
-initStore();
-
 const app = express();
 
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
@@ -39,9 +37,19 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
+  res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Lumière API server running on http://localhost:${PORT}`);
-});
+async function start() {
+  try {
+    await initStore();
+    app.listen(PORT, () => {
+      console.log(`Lumière API server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+start();

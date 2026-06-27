@@ -19,6 +19,8 @@
 
 The frontend and backend are **fully integrated** — the React app talks to the Express API for all live data (no localStorage for salon config or mock bookings).
 
+**Technical documentation:** [docs/README.md](docs/README.md) — architecture, frontend, API, database schema, admin portal, deployment.
+
 ---
 
 ## Key Features
@@ -36,9 +38,11 @@ The frontend and backend are **fully integrated** — the React app talks to the
 - Change admin password and reset content to defaults
 
 ### Backend API
-- REST API on Express with JSON file storage
+- REST API on Express with **PostgreSQL** database (`pg`)
+- Normalized schema: 18 tables for config, services, bookings, and admin
 - Session-based admin auth (httpOnly cookies)
 - Server-side price calculation and double-booking prevention
+- Automatic migration from legacy JSON files on first run
 
 ---
 
@@ -48,7 +52,7 @@ The frontend and backend are **fully integrated** — the React app talks to the
 |-------|------------|
 | Frontend | React 19, TypeScript, React Router, Tailwind CSS v4, Lucide icons |
 | Backend | Express 4, TypeScript (tsx), cookie-parser, cors |
-| Storage | JSON files in `data/` (config, bookings, admin credentials) |
+| Database | **PostgreSQL** (`pg`) — connection via `DATABASE_URL` |
 | Build | Vite 6 |
 
 ---
@@ -127,12 +131,18 @@ SESSION_SECRET=change-me-in-production
 | `CORS_ORIGIN` | Frontend origin for CORS (default `http://localhost:3000`) |
 | `ADMIN_PASSWORD` | Initial admin password (hashed on first run) |
 | `SESSION_SECRET` | Reserved for future session hardening |
+| `DATABASE_URL` | PostgreSQL connection string (required) |
+| `DATABASE_SSL` | Set `true` for cloud Postgres (Railway, Neon, Supabase) |
+
+**Full technical documentation:** [docs/README.md](docs/README.md)
 
 ### Run (recommended)
 
-Start **both** the frontend and API together:
+Start PostgreSQL, then frontend + API:
 
 ```bash
+npm run db:up        # Docker Postgres on :5432 (first time)
+cp .env.example .env
 npm run dev:full
 ```
 
@@ -154,7 +164,7 @@ npm run server
 npm run dev
 ```
 
-> **Note:** Running only `npm run dev` without the API will show a connection error screen. Always start the server or use `npm run dev:full`.
+> **Note:** PostgreSQL must be running and `DATABASE_URL` set in `.env`. Use `npm run db:up` for local Docker Postgres. Running only `npm run dev` without the API will show a connection error.
 
 ---
 
@@ -164,9 +174,16 @@ npm run dev
 lumiere-beauty-salon/
 ├── server/                 # Express API
 │   ├── index.ts            # App entry, routes, static serving in prod
+│   ├── db/
+│   │   ├── schema.sql      # Complete SQL schema (source of truth)
+│   │   ├── connection.ts   # PostgreSQL pool + migrations
+│   │   ├── seed.ts         # Seed & legacy JSON import
+│   │   └── repositories/   # config, bookings, admin data access
 │   ├── routes/             # auth, config, bookings
-│   ├── store/              # JSON file persistence
-│   └── middleware/         # Session auth
+│   └── store/              # Store facade over repositories
+├── docker-compose.yml      # Local PostgreSQL for development
+├── docs/
+│   └── DATABASE.md         # Schema reference & ER diagram
 ├── src/
 │   ├── api/client.ts       # Frontend API client (all HTTP calls)
 │   ├── context/            # SalonConfigContext (API-backed state)
@@ -174,10 +191,7 @@ lumiere-beauty-salon/
 │   ├── admin/              # Admin login + dashboard
 │   ├── config/defaults.ts  # Default salon content + types
 │   └── pages/HomePage.tsx
-├── data/                   # Runtime data (gitignored, auto-created)
-│   ├── salon-config.json
-│   ├── bookings.json
-│   └── admin.json
+├── data/                   # Legacy JSON import only (gitignored)
 └── dist/                   # Production frontend build
 ```
 
@@ -202,6 +216,8 @@ Set `NODE_ENV=production` and configure `CORS_ORIGIN` to your production domain.
 
 | Command | Description |
 |---------|-------------|
+| `npm run db:up` | Start local PostgreSQL (Docker) |
+| `npm run db:down` | Stop local PostgreSQL |
 | `npm run dev` | Frontend only (port 3000) |
 | `npm run server` | API only (port 3001) |
 | `npm run dev:full` | Frontend + API together |
@@ -216,7 +232,7 @@ Set `NODE_ENV=production` and configure `CORS_ORIGIN` to your production domain.
 
 ### "Unable to connect" on the website
 
-The API is not running. Start it with `npm run server` or use `npm run dev:full`.
+The API is not running, or PostgreSQL is not available. Run `npm run db:up`, then `npm run dev:full`.
 
 ### Admin login fails
 

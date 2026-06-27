@@ -1,31 +1,46 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { DEFAULT_SALON_CONFIG } from '../../src/config/defaults.ts';
-import type { SalonConfig } from '../../src/config/defaults.ts';
+import type { PublicSalonConfig } from '../../src/config/defaults.ts';
 import type { AppointmentBooking } from '../../src/types.ts';
-import { hashPassword, verifyPassword } from '../utils/password.ts';
+import { initDatabase } from '../db/connection.ts';
+import {
+  loadPublicConfig,
+  savePublicConfig,
+  resetPublicConfig,
+  findServiceById,
+} from '../db/repositories/configRepository.ts';
+import {
+  getBookings as queryBookings,
+  createBooking,
+  updateBookingStatus,
+  getBookedSlotsForDate,
+  createBookingId,
+} from '../db/repositories/bookingRepository.ts';
+import {
+  verifyAdminPassword,
+  updateAdminPassword,
+  seedAdminPassword,
+  importAdminHashFromJson,
+} from '../db/repositories/adminRepository.ts';
+import {
+  isDatabaseSeeded,
+  seedDefaultConfig,
+  seedFromConfig,
+  importBookingsFromJson,
+} from '../db/seed.ts';
+
+export type { PublicSalonConfig };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '../../data');
+const LEGACY_CONFIG_PATH = join(DATA_DIR, 'salon-config.json');
+const LEGACY_BOOKINGS_PATH = join(DATA_DIR, 'bookings.json');
+const LEGACY_ADMIN_PATH = join(DATA_DIR, 'admin.json');
 
-const CONFIG_PATH = join(DATA_DIR, 'salon-config.json');
-const BOOKINGS_PATH = join(DATA_DIR, 'bookings.json');
-const ADMIN_PATH = join(DATA_DIR, 'admin.json');
+let storeInitPromise: Promise<void> | null = null;
 
-export type PublicSalonConfig = Omit<SalonConfig, 'adminPassword'>;
-
-interface AdminData {
-  passwordHash: string;
-}
-
-function ensureDataDir() {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-function readJson<T>(path: string): T | null {
+function readLegacyJson<T>(path: string): T | null {
   if (!existsSync(path)) return null;
   try {
     return JSON.parse(readFileSync(path, 'utf-8')) as T;
@@ -34,85 +49,80 @@ function readJson<T>(path: string): T | null {
   }
 }
 
-function writeJson(path: string, data: unknown) {
-  ensureDataDir();
-  writeFileSync(path, JSON.stringify(data, null, 2), 'utf-8');
-}
+async function migrateFromLegacyJson() {
+  const legacyConfig = readLegacyJson<PublicSalonConfig>(LEGACY_CONFIG_PATH);
+  const legacyBookings = readLegacyJson<AppointmentBooking[]>(LEGACY_BOOKINGS_PATH);
+  const legacyAdmin = readLegacyJson<{ passwordHash: string }>(LEGACY_ADMIN_PATH);
 
-export function initStore() {
-  ensureDataDir();
-
-  if (!existsSync(CONFIG_PATH)) {
-    const { adminPassword: _, ...publicConfig } = DEFAULT_SALON_CONFIG;
-    writeJson(CONFIG_PATH, publicConfig);
+  if (legacyConfig) {
+    await seedFromConfig(legacyConfig);
+  } else {
+    await seedDefaultConfig();
   }
 
-  if (!existsSync(BOOKINGS_PATH)) {
-    writeJson(BOOKINGS_PATH, []);
+  if (legacyBookings?.length) {
+    await importBookingsFromJson(legacyBookings);
   }
 
-  if (!existsSync(ADMIN_PATH)) {
-    const defaultPassword = process.env.ADMIN_PASSWORD || DEFAULT_SALON_CONFIG.adminPassword;
-    writeJson(ADMIN_PATH, { passwordHash: hashPassword(defaultPassword) } satisfies AdminData);
+  if (legacyAdmin?.passwordHash) {
+    await importAdminHashFromJson(legacyAdmin.passwordHash);
+  } else {
+    await seedAdminPassword();
   }
 }
 
-export function getPublicConfig(): PublicSalonConfig {
-  initStore();
-  const config = readJson<PublicSalonConfig>(CONFIG_PATH);
-  if (!config) {
-    const { adminPassword: _, ...publicConfig } = DEFAULT_SALON_CONFIG;
-    return publicConfig;
+export async function initStore() {
+  if (!storeInitPromise) {
+    storeInitPromise = (async () => {
+      await initDatabase();
+
+      if (!(await isDatabaseSeeded())) {
+        if (existsSync(LEGACY_CONFIG_PATH)) {
+          await migrateFromLegacyJson();
+        } else {
+          await seedDefaultConfig();
+          await seedAdminPassword();
+        }
+      }
+    })();
   }
-  return config;
+  await storeInitPromise;
 }
 
-export function saveConfig(config: PublicSalonConfig): PublicSalonConfig {
-  writeJson(CONFIG_PATH, config);
-  return config;
+export async function getPublicConfig(): Promise<PublicSalonConfig> {
+  await initStore();
+  return loadPublicConfig();
 }
 
-export function resetConfig(): PublicSalonConfig {
-  const { adminPassword: _, ...publicConfig } = DEFAULT_SALON_CONFIG;
-  writeJson(CONFIG_PATH, publicConfig);
-  return publicConfig;
+export async function saveConfig(config: PublicSalonConfig): Promise<PublicSalonConfig> {
+  await initStore();
+  return savePublicConfig(config);
 }
 
-export function verifyAdminPassword(password: string): boolean {
-  initStore();
-  const admin = readJson<AdminData>(ADMIN_PATH);
-  if (!admin?.passwordHash) return false;
-  return verifyPassword(password, admin.passwordHash);
+export async function resetConfig(): Promise<PublicSalonConfig> {
+  await initStore();
+  return resetPublicConfig();
 }
 
-export function updateAdminPassword(newPassword: string) {
-  writeJson(ADMIN_PATH, { passwordHash: hashPassword(newPassword) } satisfies AdminData);
+export { verifyAdminPassword, updateAdminPassword, findServiceById, getBookedSlotsForDate, createBookingId };
+
+export async function getBookings(filters?: {
+  date?: string;
+  status?: string;
+}): Promise<AppointmentBooking[]> {
+  await initStore();
+  return queryBookings(filters);
 }
 
-export function getBookings(): AppointmentBooking[] {
-  initStore();
-  return readJson<AppointmentBooking[]>(BOOKINGS_PATH) || [];
+export async function insertBooking(booking: AppointmentBooking): Promise<AppointmentBooking> {
+  await initStore();
+  return createBooking(booking);
 }
 
-export function saveBookings(bookings: AppointmentBooking[]) {
-  writeJson(BOOKINGS_PATH, bookings);
-}
-
-export function findServiceById(serviceId: string): { service: import('../../src/types.ts').Service; categoryId: string } | null {
-  const config = getPublicConfig();
-  for (const category of config.services) {
-    const service = category.services.find((s) => s.id === serviceId);
-    if (service) return { service, categoryId: category.id };
-  }
-  return null;
-}
-
-export function getBookedSlotsForDate(date: string): string[] {
-  return getBookings()
-    .filter((b) => b.preferredDate === date && b.status !== 'cancelled')
-    .map((b) => b.preferredTime);
-}
-
-export function createBookingId(): string {
-  return 'LM-' + Math.floor(100000 + Math.random() * 900000);
+export async function patchBookingStatus(
+  id: string,
+  status: AppointmentBooking['status'],
+): Promise<AppointmentBooking | null> {
+  await initStore();
+  return updateBookingStatus(id, status);
 }

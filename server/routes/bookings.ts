@@ -3,7 +3,8 @@ import { requireAuth } from '../middleware/auth.ts';
 import {
   getPublicConfig,
   getBookings,
-  saveBookings,
+  insertBooking,
+  patchBookingStatus,
   findServiceById,
   getBookedSlotsForDate,
   createBookingId,
@@ -12,126 +13,126 @@ import type { AppointmentBooking } from '../../src/types.ts';
 
 const router = Router();
 
-router.get('/availability', (req, res) => {
-  const date = req.query.date as string;
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    res.status(400).json({ error: 'Valid date query param required (YYYY-MM-DD)' });
-    return;
-  }
-  const config = getPublicConfig();
-  const bookedSlots = getBookedSlotsForDate(date);
-  const availableSlots = config.timeSlots.filter((slot) => !bookedSlots.includes(slot));
-  res.json({ date, availableSlots, bookedSlots });
-});
-
-router.post('/', (req, res) => {
-  const {
-    customerName,
-    customerPhone,
-    customerEmail,
-    preferredDate,
-    preferredTime,
-    serviceIds,
-    notes,
-  } = req.body as {
-    customerName?: string;
-    customerPhone?: string;
-    customerEmail?: string;
-    preferredDate?: string;
-    preferredTime?: string;
-    serviceIds?: string[];
-    notes?: string;
-  };
-
-  if (!customerName?.trim() || !customerPhone?.trim() || !preferredDate || !preferredTime) {
-    res.status(400).json({ error: 'Name, phone, date, and time are required' });
-    return;
-  }
-  if (!serviceIds?.length) {
-    res.status(400).json({ error: 'At least one service is required' });
-    return;
-  }
-
-  const config = getPublicConfig();
-  if (!config.timeSlots.includes(preferredTime)) {
-    res.status(400).json({ error: 'Invalid time slot' });
-    return;
-  }
-
-  const bookedSlots = getBookedSlotsForDate(preferredDate);
-  if (bookedSlots.includes(preferredTime)) {
-    res.status(409).json({ error: 'This time slot is already booked' });
-    return;
-  }
-
-  const selectedServices = [];
-  for (const id of serviceIds) {
-    const found = findServiceById(id);
-    if (!found) {
-      res.status(400).json({ error: `Unknown service: ${id}` });
+router.get('/availability', async (req, res, next) => {
+  try {
+    const date = req.query.date as string;
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      res.status(400).json({ error: 'Valid date query param required (YYYY-MM-DD)' });
       return;
     }
-    selectedServices.push(found.service);
+    const config = await getPublicConfig();
+    const bookedSlots = await getBookedSlotsForDate(date);
+    const availableSlots = config.timeSlots.filter((slot) => !bookedSlots.includes(slot));
+    res.json({ date, availableSlots, bookedSlots });
+  } catch (error) {
+    next(error);
   }
-
-  const totalPrice = selectedServices.reduce((sum, s) => sum + s.pricePKR, 0);
-
-  const booking: AppointmentBooking = {
-    id: createBookingId(),
-    customerName: customerName.trim(),
-    customerPhone: customerPhone.trim(),
-    customerEmail: customerEmail?.trim() || '',
-    preferredDate,
-    preferredTime,
-    selectedServices,
-    totalPrice,
-    status: 'pending',
-    notes: notes?.trim(),
-  };
-
-  const bookings = getBookings();
-  bookings.push(booking);
-  saveBookings(bookings);
-
-  res.status(201).json(booking);
 });
 
-router.get('/', requireAuth, (req, res) => {
-  let bookings = getBookings();
-  const date = req.query.date as string | undefined;
-  const status = req.query.status as string | undefined;
+router.post('/', async (req, res, next) => {
+  try {
+    const {
+      customerName,
+      customerPhone,
+      customerEmail,
+      preferredDate,
+      preferredTime,
+      serviceIds,
+      notes,
+    } = req.body as {
+      customerName?: string;
+      customerPhone?: string;
+      customerEmail?: string;
+      preferredDate?: string;
+      preferredTime?: string;
+      serviceIds?: string[];
+      notes?: string;
+    };
 
-  if (date) bookings = bookings.filter((b) => b.preferredDate === date);
-  if (status) bookings = bookings.filter((b) => b.status === status);
+    if (!customerName?.trim() || !customerPhone?.trim() || !preferredDate || !preferredTime) {
+      res.status(400).json({ error: 'Name, phone, date, and time are required' });
+      return;
+    }
+    if (!serviceIds?.length) {
+      res.status(400).json({ error: 'At least one service is required' });
+      return;
+    }
 
-  bookings.sort((a, b) => {
-    const dateCompare = b.preferredDate.localeCompare(a.preferredDate);
-    if (dateCompare !== 0) return dateCompare;
-    return b.id.localeCompare(a.id);
-  });
+    const config = await getPublicConfig();
+    if (!config.timeSlots.includes(preferredTime)) {
+      res.status(400).json({ error: 'Invalid time slot' });
+      return;
+    }
 
-  res.json({ bookings });
+    const bookedSlots = await getBookedSlotsForDate(preferredDate);
+    if (bookedSlots.includes(preferredTime)) {
+      res.status(409).json({ error: 'This time slot is already booked' });
+      return;
+    }
+
+    const selectedServices = [];
+    for (const id of serviceIds) {
+      const found = await findServiceById(id);
+      if (!found) {
+        res.status(400).json({ error: `Unknown service: ${id}` });
+        return;
+      }
+      selectedServices.push(found.service);
+    }
+
+    const totalPrice = selectedServices.reduce((sum, s) => sum + s.pricePKR, 0);
+
+    const booking: AppointmentBooking = {
+      id: createBookingId(),
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
+      customerEmail: customerEmail?.trim() || '',
+      preferredDate,
+      preferredTime,
+      selectedServices,
+      totalPrice,
+      status: 'pending',
+      notes: notes?.trim(),
+    };
+
+    const saved = await insertBooking(booking);
+    res.status(201).json(saved);
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.patch('/:id', requireAuth, (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body as { status?: AppointmentBooking['status'] };
-
-  if (!status || !['pending', 'confirmed', 'cancelled'].includes(status)) {
-    res.status(400).json({ error: 'Valid status required: pending, confirmed, or cancelled' });
-    return;
+router.get('/', requireAuth, async (req, res, next) => {
+  try {
+    const date = req.query.date as string | undefined;
+    const status = req.query.status as string | undefined;
+    const bookings = await getBookings({ date, status });
+    res.json({ bookings });
+  } catch (error) {
+    next(error);
   }
+});
 
-  const bookings = getBookings();
-  const index = bookings.findIndex((b) => b.id === id);
-  if (index === -1) {
-    res.status(404).json({ error: 'Booking not found' });
-    return;
+router.patch('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body as { status?: AppointmentBooking['status'] };
+
+    if (!status || !['pending', 'confirmed', 'cancelled'].includes(status)) {
+      res.status(400).json({ error: 'Valid status required: pending, confirmed, or cancelled' });
+      return;
+    }
+
+    const updated = await patchBookingStatus(id, status);
+    if (!updated) {
+      res.status(404).json({ error: 'Booking not found' });
+      return;
+    }
+
+    res.json(updated);
+  } catch (error) {
+    next(error);
   }
-
-  bookings[index] = { ...bookings[index], status };
-  saveBookings(bookings);
-  res.json(bookings[index]);
 });
 
 export default router;
