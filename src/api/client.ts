@@ -1,6 +1,13 @@
 import type { PublicSalonConfig } from '../config/defaults';
 import type { AppointmentBooking, BookingCreateResponse } from '../types';
 
+/** Set at build time when frontend and API are on different hosts (e.g. Vercel + Railway). */
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+
+export function apiUrl(path: string): string {
+  return `${API_BASE}/api${path}`;
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -10,6 +17,14 @@ export class ApiError extends Error {
 }
 
 function connectionHelpMessage(): string {
+  if (import.meta.env.PROD) {
+    if (!API_BASE) {
+      return (
+        'This site is static-only — the API is not deployed. Host the full app with npm run build && npm start on Railway/Render, or set VITE_API_URL to your API host and redeploy.'
+      );
+    }
+    return `Cannot reach the API at ${API_BASE}. Check that the server is running and CORS_ORIGIN matches this site URL.`;
+  }
   return (
     'API server is not reachable. In the project folder run: npm run db:up (PostgreSQL), then npm run dev (starts frontend + API together).'
   );
@@ -18,7 +33,7 @@ function connectionHelpMessage(): string {
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(apiUrl(path), {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', ...options?.headers },
       ...options,
@@ -111,7 +126,7 @@ export const api = {
   uploadGalleryImage: async (file: File) => {
     const form = new FormData();
     form.append('image', file);
-    const res = await fetch('/api/upload/gallery', {
+    const res = await fetch(apiUrl('/upload/gallery'), {
       method: 'POST',
       credentials: 'include',
       body: form,

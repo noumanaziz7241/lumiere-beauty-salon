@@ -36,18 +36,29 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+function cookieSameSite(): 'lax' | 'none' {
+  if (process.env.COOKIE_SAME_SITE === 'none') return 'none';
+  return 'lax';
+}
+
 export function setSessionCookie(res: Response, sessionId: string) {
+  const sameSite = cookieSameSite();
   res.cookie(SESSION_COOKIE, sessionId, {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    sameSite,
+    secure: sameSite === 'none' || process.env.NODE_ENV === 'production',
     maxAge: SESSION_TTL_MS,
     path: '/',
   });
 }
 
 export function clearSessionCookie(res: Response) {
-  res.clearCookie(SESSION_COOKIE, { path: '/' });
+  const sameSite = cookieSameSite();
+  res.clearCookie(SESSION_COOKIE, {
+    path: '/',
+    sameSite,
+    secure: sameSite === 'none' || process.env.NODE_ENV === 'production',
+  });
 }
 
 export { SESSION_COOKIE };
