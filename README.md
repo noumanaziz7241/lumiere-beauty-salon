@@ -19,7 +19,7 @@
 
 The frontend and backend are **fully integrated** — the React app talks to the Express API for all live data (no localStorage for salon config or mock bookings).
 
-**Technical documentation:** [docs/README.md](docs/README.md) — architecture, frontend, API, database schema, admin portal, deployment. **Future work:** [docs/ROADMAP.md](docs/ROADMAP.md).
+**Technical documentation:** [docs/README.md](docs/README.md) — architecture, frontend, API, database schema, admin portal, deployment. **AI agents:** [AGENTS.md](AGENTS.md) — Cursor rules, skills, and recommended workflows. **Future work:** [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 

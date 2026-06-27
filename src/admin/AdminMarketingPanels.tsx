@@ -429,8 +429,16 @@ export function FaqAdminPanel({ draft, setDraft, inputClass, labelClass, textare
   );
 }
 
-export function GalleryAdminPanel({ draft, setDraft, inputClass, labelClass }: PanelProps) {
+export function GalleryAdminPanel({
+  draft,
+  setDraft,
+  inputClass,
+  labelClass,
+  savedGallery,
+}: PanelProps & { savedGallery: GalleryImage[] }) {
   const [uploading, setUploading] = React.useState(false);
+  const hasUnsavedGallery =
+    JSON.stringify(draft.gallery) !== JSON.stringify(savedGallery);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -476,6 +484,11 @@ export function GalleryAdminPanel({ draft, setDraft, inputClass, labelClass }: P
         </label>
       </div>
       <p className="text-xs text-burgundy/60">Upload JPG/PNG/WebP (max 5MB). Click Save All after editing.</p>
+      {hasUnsavedGallery && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-900 font-semibold">
+          Gallery changes are not live yet — click <strong>Save All</strong> in the top bar to apply.
+        </div>
+      )}
       <div className="grid sm:grid-cols-2 gap-4">
         {draft.gallery.map((img) => (
           <div key={img.id} className="rounded-xl border border-rose-pale/50 overflow-hidden">
@@ -493,7 +506,7 @@ export function GalleryAdminPanel({ draft, setDraft, inputClass, labelClass }: P
                   updateImage(img.id, { category: e.target.value as GalleryImage['category'] })
                 }
               >
-                {['bridal', 'hair', 'makeup', 'before-after', 'salon', 'other'].map((c) => (
+                {['bridal', 'hair', 'makeup', 'before-after', 'style-refresh', 'salon', 'other'].map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>

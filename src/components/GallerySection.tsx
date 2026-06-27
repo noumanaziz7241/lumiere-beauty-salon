@@ -9,9 +9,15 @@ const FILTERS: Array<GalleryImage['category'] | 'all'> = [
   'hair',
   'makeup',
   'before-after',
+  'style-refresh',
   'salon',
   'other',
 ];
+
+function categoryLabel(cat: GalleryImage['category'] | 'all') {
+  if (cat === 'all') return 'All';
+  return cat.replace(/-/g, ' ');
+}
 
 export default function GallerySection() {
   const { config } = useSalonConfig();
@@ -48,7 +54,7 @@ export default function GallerySection() {
                   : 'bg-white text-burgundy/70 border-rose-pale'
               }`}
             >
-              {cat === 'all' ? 'All' : cat.replace('-', ' ')}
+              {categoryLabel(cat)}
             </button>
           ))}
         </div>
@@ -62,12 +68,18 @@ export default function GallerySection() {
               <img
                 src={img.imageUrl}
                 alt={img.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className={`w-full h-full group-hover:scale-105 transition-transform duration-500 ${
+                  img.category === 'before-after'
+                    ? 'object-cover object-center'
+                    : 'object-cover'
+                }`}
                 loading="lazy"
               />
               <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-burgundy/90 to-transparent p-3">
                 <p className="text-white text-xs font-serif font-bold">{img.title}</p>
-                <p className="text-rose-pale/80 text-[10px] uppercase tracking-wider">{img.category}</p>
+                <p className="text-rose-pale/80 text-[10px] uppercase tracking-wider">
+                  {categoryLabel(img.category)}
+                </p>
               </figcaption>
             </figure>
           ))}

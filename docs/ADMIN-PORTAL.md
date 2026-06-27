@@ -25,7 +25,9 @@ Route: `/admin` — password from `ADMIN_PASSWORD` (default `lumiere2024`).
 Marketing tab → enable, set headline/message/link → **Save All**.
 
 ### Gallery
-Gallery tab → upload image (immediate file save) → add caption → **Save All** to persist in DB.
+Gallery tab → upload image (file saved to `uploads/gallery/` immediately) → edit title/category → **Save All** to persist the gallery list in the database.
+
+An amber banner appears when gallery edits are pending — they are not visible on the public site until **Save All** is clicked. Admin gallery changes (add/remove/reorder) are preserved across server restarts.
 
 ### Google reviews
 Marketing tab → enter rating, review count, Google Maps reviews URL, optional embed URL, manual review snippets. No Google Places API required.

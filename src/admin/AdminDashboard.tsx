@@ -161,7 +161,13 @@ export default function AdminDashboard() {
               <FaqAdminPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} textareaClass={textareaClass} />
             )}
             {activeTab === 'gallery' && (
-              <GalleryAdminPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} />
+              <GalleryAdminPanel
+                draft={draft}
+                setDraft={setDraft}
+                inputClass={inputClass}
+                labelClass={labelClass}
+                savedGallery={config.gallery}
+              />
             )}
             {activeTab === 'packages' && (
               <PackagesAdminPanel draft={draft} setDraft={setDraft} inputClass={inputClass} labelClass={labelClass} textareaClass={textareaClass} />

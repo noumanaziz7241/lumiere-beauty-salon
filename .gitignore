@@ -10,3 +10,6 @@ uploads/gallery/*
 *.log
 .env*
 !.env.example
+docs/
+.cursor/
+

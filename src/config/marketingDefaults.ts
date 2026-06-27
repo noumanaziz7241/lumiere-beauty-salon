@@ -32,7 +32,7 @@ export interface GoogleReviewsConfig {
 export interface GalleryImage {
   id: string;
   title: string;
-  category: 'bridal' | 'hair' | 'makeup' | 'before-after' | 'salon' | 'other';
+  category: 'bridal' | 'hair' | 'makeup' | 'before-after' | 'style-refresh' | 'salon' | 'other';
   imageUrl: string;
 }
 
@@ -205,13 +205,13 @@ export const DEFAULT_GALLERY: GalleryImage[] = [
   {
     id: 'gal10',
     title: 'Colour transformation',
-    category: 'before-after',
+    category: 'style-refresh',
     imageUrl: '/images/gallery/hair-color.jpg',
   },
   {
     id: 'gal11',
-    title: 'Style refresh',
-    category: 'before-after',
+    title: 'Glossy waves',
+    category: 'style-refresh',
     imageUrl: '/images/gallery/before-after.jpg',
   },
   {
@@ -219,5 +219,17 @@ export const DEFAULT_GALLERY: GalleryImage[] = [
     title: 'Skin treatment',
     category: 'other',
     imageUrl: '/images/gallery/facial-treatment.jpg',
+  },
+  {
+    id: 'gal13',
+    title: 'Hair colour transformation',
+    category: 'before-after',
+    imageUrl: '/images/gallery/ba-hair.jpg',
+  },
+  {
+    id: 'gal14',
+    title: 'Makeup transformation',
+    category: 'before-after',
+    imageUrl: '/images/gallery/ba-makeup.jpg',
   },
 ];

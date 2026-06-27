@@ -10,3 +10,4 @@
 | [DATABASE.md](./DATABASE.md) | PostgreSQL schema and seed |
 | [ADMIN-PORTAL.md](./ADMIN-PORTAL.md) | Admin CMS tabs and workflows |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Local dev and production notes |
+| [CURSOR-AGENTS.md](./CURSOR-AGENTS.md) | Cursor rules, skills, and agent workflows |
