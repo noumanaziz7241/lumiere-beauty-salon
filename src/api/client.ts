@@ -9,16 +9,30 @@ export class ApiError extends Error {
   }
 }
 
+function connectionHelpMessage(): string {
+  return (
+    'API server is not reachable. In the project folder run: npm run db:up (PostgreSQL), then npm run dev (starts frontend + API together).'
+  );
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      ...options,
+    });
+  } catch {
+    throw new ApiError(0, connectionHelpMessage());
+  }
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({ error: res.statusText }));
-    throw new ApiError(res.status, body.error || 'Request failed');
+    const body = await res.json().catch(() => ({ error: '' }));
+    const message =
+      body.error ||
+      (res.status >= 500 ? connectionHelpMessage() : res.statusText || 'Request failed');
+    throw new ApiError(res.status, message);
   }
 
   return res.json() as Promise<T>;

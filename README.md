@@ -143,7 +143,7 @@ Start PostgreSQL, then frontend + API:
 ```bash
 npm run db:up        # Docker Postgres on :5432 (first time)
 cp .env.example .env
-npm run dev:full
+npm run dev          # frontend :3000 + API :3001 together
 ```
 
 | URL | Service |
@@ -164,7 +164,7 @@ npm run server
 npm run dev
 ```
 
-> **Note:** PostgreSQL must be running and `DATABASE_URL` set in `.env`. Use `npm run db:up` for local Docker Postgres. Running only `npm run dev` without the API will show a connection error.
+> **Note:** PostgreSQL must be running (`npm run db:up`). Use `npm run dev` — it starts **both** the website and API. Running only `npm run dev:web` without the API will show a connection error.
 
 ---
 
@@ -218,9 +218,10 @@ Set `NODE_ENV=production` and configure `CORS_ORIGIN` to your production domain.
 |---------|-------------|
 | `npm run db:up` | Start local PostgreSQL (Docker) |
 | `npm run db:down` | Stop local PostgreSQL |
-| `npm run dev` | Frontend only (port 3000) |
+| `npm run dev` | Frontend + API together (recommended) |
+| `npm run dev:web` | Frontend only (port 3000) |
 | `npm run server` | API only (port 3001) |
-| `npm run dev:full` | Frontend + API together |
+| `npm run dev:full` | Alias for `npm run dev` |
 | `npm run build` | Build frontend to `dist/` |
 | `npm start` | Production: API + static files |
 | `npm run lint` | TypeScript check |

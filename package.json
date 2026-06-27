@@ -7,11 +7,12 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
+    "dev": "concurrently -n web,api -c blue,magenta \"npm run dev:web\" \"npm run server\"",
+    "dev:web": "vite --port=3000 --host=0.0.0.0",
     "server": "tsx server/index.ts",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "dev:full": "concurrently -n web,api -c blue,magenta \"npm run dev\" \"npm run server\"",
+    "dev:full": "npm run dev",
     "build": "vite build",
     "start": "NODE_ENV=production tsx server/index.ts",
     "preview": "vite preview",
